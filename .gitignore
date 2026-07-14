@@ -1,0 +1,13 @@
+.wp/
+
+node_modules
+.turbo
+dist
+.next
+.expo
+build
+
+*.log
+.DS_Store
+.env
+.env.*
