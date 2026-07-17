@@ -1,15 +1,15 @@
-import LottieView from "lottie-react-native";
-import { MotiView } from "moti";
+// import LottieView from "lottie-react-native";
+// import { MotiView } from "moti";
 import { Text, View } from "react-native";
 
-import sampleLottie from "../../assets/lottie/sample.json";
+// import sampleLottie from "../../assets/lottie/sample.json";
 
 export default function HomeScreen() {
   return (
     <View className="flex-1 items-center justify-center gap-6 bg-slate-950 p-6">
-      <Text className="text-xl font-semibold text-white">Asaase Mobile</Text>
+      <Text className="text-xl font-semibold text-red-500">Asaase Mobile</Text>
 
-      <MotiView
+      {/* <MotiView
         from={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "timing", duration: 600 }}
@@ -21,7 +21,7 @@ export default function HomeScreen() {
         autoPlay
         loop
         style={{ width: 120, height: 120 }}
-      />
+      /> */}
     </View>
   );
 }
