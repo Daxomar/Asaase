@@ -32,9 +32,9 @@ export default function HomeScreen() {
         className="rounded-lg bg-yellow-400 px-4 py-2"
       >
         <Text className="text-white">Me</Text>
-        
+
       </TouchableOpacity>
-      
+
     </View>
   );
 }
