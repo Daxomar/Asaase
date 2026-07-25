@@ -217,6 +217,7 @@ export default function MarketplaceScreen() {
       {celebrating ? (
         <View className="absolute inset-0 items-center justify-center" pointerEvents="none">
           <LottieView
+            // eslint-disable-next-line @typescript-eslint/no-require-imports -- RN static asset loading requires require()
             source={require("../../assets/lottie/confetti.json")}
             autoPlay
             loop={false}

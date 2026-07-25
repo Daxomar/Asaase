@@ -110,7 +110,6 @@ export default function HomeScreen() {
           // to an error screen over a transient refetch failure
         }
       })();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [screen.status]),
   );
 

@@ -32,6 +32,11 @@ const BLOCKAGE_TYPES = [
 
 export const alertsRouter: Router = Router();
 
+// Postgres `uuid` columns throw a type-cast error (not a "not found") on a malformed literal,
+// which would otherwise surface as a misleading 503 DB_UNAVAILABLE. Reject bad ids as 400 before
+// they ever reach the query.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // GET /api/v1/alerts/summary — dashboard's live data source (A-14). No device auth: this is a
 // no-device NADMO-side route (ORCHESTRATOR_CONTRACT.md §6 explicitly exempts it).
 alertsRouter.get("/v1/alerts/summary", async (_req, res) => {
@@ -83,6 +88,13 @@ alertsRouter.get("/v1/alerts/summary", async (_req, res) => {
 alertsRouter.get("/clusters/:id/summary", async (req, res) => {
   const clusterId = req.params.id;
 
+  if (!UUID_RE.test(clusterId)) {
+    res.status(400).json({
+      error: { code: "VALIDATION_ERROR", message: `"${clusterId}" is not a valid cluster id (expected a UUID)` },
+    });
+    return;
+  }
+
   let cluster: ClusterRow | undefined;
   try {
     [cluster] = await db
@@ -127,7 +139,7 @@ Chokepoint cluster ${cluster.id} at (${cluster.latitude}, ${cluster.longitude}):
 - Scan count: ${cluster.scanCount}
 - Blockage composition: ${compositionLine}
 
-Write a concise municipal action-plan brief covering: recommended clearance crew size, equipment needed for this specific blockage composition, and priority/urgency given the severity.`;
+Write a concise municipal action-plan brief covering: recommended clearance crew size, equipment needed for this specific blockage composition, and priority/urgency given the severity. Plain prose only — no markdown syntax whatsoever (no **bold**, no #headings, no "-" or "*" bullet lists), since this streams straight into a plain-text UI panel. Use short paragraphs or numbered sentences instead of bullets.`;
 
   const result = streamText({ model: getTextModel(), prompt });
 
