@@ -1,15 +1,14 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useState } from "react";
 import L from "leaflet";
 import { MapContainer, TileLayer, Circle, Marker, Popup, Tooltip } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { clusters } from "@/data/clusters";
-import { reportsByCluster } from "@/data/reports";
-import { THREAT, type ThreatLevel } from "@/data/threat";
+import type { Alert } from "@asaase/shared";
+import { THREAT, bandFromSeverity, type ThreatBand } from "@/data/threat";
 import ClusterPopup from "./ClusterPopup";
 
-const LEVELS: ThreatLevel[] = [1, 2, 3, 4];
+const BANDS: ThreatBand[] = ["red", "amber", "green"];
 
 // Distinct pin per cluster center so overlapping radius zones stay
 // separable — the translucent Circle fill alone can't tell them apart.
@@ -26,25 +25,21 @@ function clusterIcon(color: string, selected: boolean) {
   });
 }
 
-// Smaller marker for an individual raw report, shown only in isolation mode.
-function reportIcon(color: string) {
-  return L.divIcon({
-    className: "report-marker",
-    html: `<span style="display:block;width:7px;height:7px;border-radius:9999px;background:${color};border:1.5px solid var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.35);"></span>`,
-    iconSize: [7, 7],
-    iconAnchor: [3.5, 3.5],
-  });
-}
+// Alert has no PostGIS buffer radius (that was mock-only, T16 retires it) — scale a fixed
+// marker radius from report density instead, clamped to a readable map range.
+const radiusFromScanCount = (scanCount: number) => Math.min(1000, 250 + scanCount * 40);
 
-export default function RiskMap() {
+type RiskMapProps = {
+  alerts: Alert[];
+  loading: boolean;
+  error: string | null;
+};
+
+export default function RiskMap({ alerts, loading, error }: RiskMapProps) {
   const [isolatedId, setIsolatedId] = useState<string | null>(null);
 
-  const isolatedCluster = clusters.find((c) => c.id === isolatedId) ?? null;
-  const isolatedReports = useMemo(
-    () => (isolatedCluster ? reportsByCluster(isolatedCluster.id) : []),
-    [isolatedCluster]
-  );
-  const visibleClusters = isolatedCluster ? [isolatedCluster] : clusters;
+  const isolatedAlert = alerts.find((a) => a.id === isolatedId) ?? null;
+  const visibleAlerts = isolatedAlert ? [isolatedAlert] : alerts;
 
   return (
     <div className="relative h-full w-full">
@@ -54,37 +49,39 @@ export default function RiskMap() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {visibleClusters.map((cluster) => {
-          const threat = THREAT[cluster.level];
-          const isSelected = cluster.id === isolatedId;
+        {visibleAlerts.map((alert) => {
+          const band = bandFromSeverity(alert.severity);
+          const threat = THREAT[band];
+          const isSelected = alert.id === isolatedId;
 
           return (
-            <Fragment key={cluster.id}>
+            <Fragment key={alert.id}>
               <Circle
-                center={[cluster.lat, cluster.lng]}
-                radius={cluster.radius}
+                center={[alert.latitude, alert.longitude]}
+                radius={radiusFromScanCount(alert.scanCount)}
                 pathOptions={{
                   color: threat.color,
                   fillColor: threat.color,
                   fillOpacity: isSelected ? 0.18 : 0.35,
                   weight: 1.5,
-                  className:
-                    cluster.level === 1 && !isolatedId ? "cluster-pulse" : undefined,
+                  className: band === "red" && !isolatedId ? "cluster-pulse" : undefined,
                 }}
               >
-                <Tooltip direction="top">{cluster.name}</Tooltip>
+                <Tooltip direction="top">
+                  Severity {alert.severity} · {alert.scanCount} scans
+                </Tooltip>
               </Circle>
 
               <Marker
-                position={[cluster.lat, cluster.lng]}
+                position={[alert.latitude, alert.longitude]}
                 icon={clusterIcon(threat.color, isSelected)}
               >
                 <Popup>
                   <ClusterPopup
-                    cluster={cluster}
+                    alert={alert}
                     isIsolated={isSelected}
                     onToggleIsolate={() =>
-                      setIsolatedId((prev) => (prev === cluster.id ? null : cluster.id))
+                      setIsolatedId((prev) => (prev === alert.id ? null : alert.id))
                     }
                   />
                 </Popup>
@@ -92,26 +89,11 @@ export default function RiskMap() {
             </Fragment>
           );
         })}
-
-        {isolatedCluster &&
-          isolatedReports.map((report) => (
-            <Marker
-              key={report.id}
-              position={[report.lat, report.lng]}
-              icon={reportIcon(THREAT[isolatedCluster.level].color)}
-            >
-              <Tooltip direction="top">
-                {report.blockageType} · {report.reportedAt}
-              </Tooltip>
-            </Marker>
-          ))}
       </MapContainer>
 
-      {isolatedCluster && (
+      {isolatedAlert && (
         <div className="absolute top-4 left-4 z-[1000] flex items-center gap-2 rounded-pill border border-border bg-surface px-3 py-2 text-xs font-medium text-text-primary shadow-float">
-          <span>
-            Isolated — {isolatedCluster.name} ({isolatedReports.length} reports shown)
-          </span>
+          <span>Isolated — cluster {isolatedAlert.id.slice(0, 8)}</span>
           <button
             type="button"
             onClick={() => setIsolatedId(null)}
@@ -122,21 +104,39 @@ export default function RiskMap() {
         </div>
       )}
 
+      {/* No-mock policy (A-13): a backend-down state is a visible error, never silent/stale data. */}
+      {(loading || error || (!loading && !error && alerts.length === 0)) && (
+        <div className="absolute inset-0 z-[900] flex items-center justify-center bg-surface-sub/80">
+          <div className="rounded-card border border-border bg-surface px-5 py-4 text-center shadow-float">
+            {loading && <p className="text-sm text-text-secondary">Loading live alerts…</p>}
+            {!loading && error && (
+              <>
+                <p className="text-sm font-medium text-critical">Backend unreachable</p>
+                <p className="mt-1 text-xs text-text-muted">{error}</p>
+              </>
+            )}
+            {!loading && !error && alerts.length === 0 && (
+              <p className="text-sm text-text-secondary">No chokepoint clusters reported yet.</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Legend */}
       <div className="absolute bottom-4 left-4 z-[1000] rounded-card border border-border bg-surface px-4 py-3 shadow-float">
-        <div className="mb-2 text-xs font-semibold text-text-primary">Threat level</div>
+        <div className="mb-2 text-xs font-semibold text-text-primary">Severity</div>
         <div className="flex flex-col gap-1.5">
-          {LEVELS.map((level) => {
-            const threat = THREAT[level];
+          {BANDS.map((band) => {
+            const threat = THREAT[band];
             return (
-              <div key={level} className="flex items-center gap-2 text-xs text-text-secondary">
+              <div key={band} className="flex items-center gap-2 text-xs text-text-secondary">
                 <span
                   className="h-2.5 w-2.5 rounded-full"
                   style={{ background: threat.color }}
                   aria-hidden
                 />
                 <span>
-                  L{level} · {threat.label} ({threat.scoreRange})
+                  {threat.range} · {threat.label}
                 </span>
               </div>
             );

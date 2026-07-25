@@ -1,66 +1,75 @@
 import { Target, X } from "lucide-react";
-import type { RiskCluster } from "@/data/clusters";
-import { THREAT } from "@/data/threat";
+import type { Alert, BlockageType } from "@asaase/shared";
+import { THREAT, bandFromSeverity } from "@/data/threat";
 
-const BLOCKAGE_LABEL: Record<RiskCluster["blockageType"], string> = {
-  plastic: "Plastic",
-  silt: "Silt",
-  organic: "Organic",
-  mixed: "Mixed",
+// PRD FEAT-005 enum (ORCHESTRATOR_CONTRACT.md §1/§8) — real values, not the retired mock's
+// plastic/silt/organic/mixed.
+const BLOCKAGE_LABEL: Record<BlockageType, string> = {
+  sachet_water_rubbers: "Sachet & rubber",
+  pet_bottles: "PET bottles",
+  silt_sand: "Silt & sand",
+  overgrown_weeds: "Overgrown weeds",
 };
 
 type ClusterPopupProps = {
-  cluster: RiskCluster;
+  alert: Alert;
   isIsolated: boolean;
   onToggleIsolate: () => void;
 };
 
-export default function ClusterPopup({
-  cluster,
-  isIsolated,
-  onToggleIsolate,
-}: ClusterPopupProps) {
-  const threat = THREAT[cluster.level];
+// Highest-share blockage type from the breakdown — Alert has no single `blockageType` field
+// (that was mock-only), so the dominant type is derived from the live percentage breakdown.
+function dominantBlockage(breakdown: Alert["blockageBreakdown"]): BlockageType | null {
+  const entries = Object.entries(breakdown) as [BlockageType, number][];
+  if (entries.length === 0) return null;
+  return entries.reduce((a, b) => (b[1] > a[1] ? b : a))[0];
+}
+
+export default function ClusterPopup({ alert, isIsolated, onToggleIsolate }: ClusterPopupProps) {
+  const band = bandFromSeverity(alert.severity);
+  const threat = THREAT[band];
+  const dominant = dominantBlockage(alert.blockageBreakdown);
 
   return (
     <div className="w-60 font-body text-text-primary">
       <div className="px-4 pt-4">
-        <div className="font-mono text-[11px] text-text-muted">{cluster.id}</div>
+        <div className="font-mono text-[11px] text-text-muted">{alert.id.slice(0, 8)}</div>
         <div className="font-display text-base font-semibold text-text-primary">
-          {cluster.name}
+          Chokepoint cluster
         </div>
 
         <div
           className="mt-2 inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-xs font-medium"
           style={{ background: threat.bg, color: threat.color }}
         >
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ background: threat.color }}
-            aria-hidden
-          />
-          Level {cluster.level} · {threat.label} · {Math.round(cluster.threatScore)}
+          <span className="h-2 w-2 rounded-full" style={{ background: threat.color }} aria-hidden />
+          Severity {alert.severity} · {threat.label}
         </div>
 
         <div className="mt-3 flex items-center gap-2 text-xs text-text-secondary">
-          <span className="rounded-pill bg-surface-sub px-2 py-0.5 font-medium">
-            {BLOCKAGE_LABEL[cluster.blockageType]}
-          </span>
-          <span>Verified — {cluster.verifiedReports}</span>
-        </div>
-
-        <div className="mt-2 text-xs text-text-secondary">
-          Floods if rain &gt; <strong>{cluster.floodThresholdMm}mm</strong>
-        </div>
-
-        <div className="mt-1 text-[11px] text-text-muted">
-          {cluster.rawReports} raw reports → 1 cluster
+          {dominant && (
+            <span className="rounded-pill bg-surface-sub px-2 py-0.5 font-medium">
+              {BLOCKAGE_LABEL[dominant]}
+            </span>
+          )}
+          <span>{alert.scanCount} scans</span>
         </div>
       </div>
 
-      <div className="mx-4 my-3 rounded-control bg-surface-sub px-3 py-2.5 text-xs italic leading-relaxed text-text-secondary">
-        {cluster.aiSummary}
+      <div className="mx-4 my-3 flex flex-col gap-1.5">
+        {(Object.entries(alert.blockageBreakdown) as [BlockageType, number][])
+          .filter(([, pct]) => pct > 0)
+          .sort((a, b) => b[1] - a[1])
+          .map(([type, pct]) => (
+            <div key={type} className="flex items-center justify-between text-[11px] text-text-secondary">
+              <span>{BLOCKAGE_LABEL[type]}</span>
+              <span className="font-medium text-text-primary">{pct}%</span>
+            </div>
+          ))}
       </div>
+
+      {/* T17 wires the live brief here: streamClusterSummary(alert.id, onChunk) from lib/api.ts,
+          appending chunks into local state as they arrive (A-15). Static mock aiSummary retired. */}
 
       <div className="px-4">
         <button
@@ -83,7 +92,7 @@ export default function ClusterPopup({
       </div>
 
       <div className="border-t border-border mt-3 px-4 py-2 text-[11px] text-text-muted">
-        Updated {cluster.updated}
+        Updated {new Date(alert.updatedAt).toLocaleDateString()}
       </div>
     </div>
   );
