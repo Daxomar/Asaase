@@ -170,7 +170,6 @@ WHERE ST_DWithin(
   ST_MakePoint($1, $2)::geography, 
   20
 ) LIMIT 1;
-
 ```
 
 * If a cluster exists, attach `scan.id` to it and increment severity. Otherwise, instantiate a new `ChokepointCluster`.
@@ -197,7 +196,6 @@ export async function getClusterSummary(req, res) {
 
   result.pipeDataStreamToResponse(res);
 }
-
 ```
 
 ---

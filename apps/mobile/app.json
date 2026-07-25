@@ -33,6 +33,19 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Asaase uses your camera to photograph blocked drains for AI classification."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Asaase uses your location to pinpoint the drain you're reporting."
+        }
       ]
     ],
     "experiments": {

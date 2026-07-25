@@ -1,0 +1,11 @@
+{
+  "name": "@asaase/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./domain/index.ts",
+  "types": "./domain/index.ts",
+  "exports": {
+    ".": "./domain/index.ts"
+  }
+}
