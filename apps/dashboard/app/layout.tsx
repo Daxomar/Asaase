@@ -1,20 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
+import Sidebar from "@/components/Sidebar";
+import ReportsPanel from "@/components/ReportsPanel";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+
+// Closest free matches to the deck's Clash Display / Cabinet Grotesk pairing.
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Asaase Dashboard",
-  description: "Asaase analytics dashboard",
+  title: "Asaase AI — Dashboard",
+  description: "Every citizen. Every drain. One climate defense network.",
 };
 
 export default function RootLayout({
@@ -25,9 +30,19 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${spaceGrotesk.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <SidebarProvider>
+          <Sidebar />    
+          <SidebarInset className="overflow-hidden">   
+            
+            <div className="flex flex-1 flex-col gap-4">
+              {children}
+            </div>
+          </SidebarInset>
+        </SidebarProvider>
+      </body>
     </html>
   );
 }
