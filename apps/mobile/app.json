@@ -46,6 +46,12 @@
         {
           "locationWhenInUsePermission": "Asaase uses your location to pinpoint the drain you're reporting."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "streak-reminders"
+        }
       ]
     ],
     "experiments": {

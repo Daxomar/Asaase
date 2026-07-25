@@ -10,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { User } from "@asaase/shared";
 import { bootstrapDevice, fetchMe, pingStreak, submitQuiz } from "../lib/api";
 import { getOrCreateDeviceId } from "../lib/device";
+import { scheduleStreakReminder } from "../lib/streakReminder";
 
 // ponytail: flat threshold, no XP curve — every 100 XP is one level. Revisit only if a designer
 // asks for level-scaling; a naive constant is the whole feature until then.
@@ -82,6 +83,8 @@ export default function HomeScreen() {
       await bootstrapDevice(deviceId); // first-launch upsert, no-op after (ORCHESTRATOR_CONTRACT.md §6)
       const user = await fetchMe(deviceId);
       setScreen({ status: "ready", user });
+      // A-06, best-effort local reminder only — never let a scheduling hiccup break the screen.
+      scheduleStreakReminder(user.lastActivityAt).catch(() => {});
     } catch (err) {
       setScreen({ status: "error", message: err instanceof Error ? err.message : "Could not reach Asaase." });
     }
@@ -101,6 +104,7 @@ export default function HomeScreen() {
           const deviceId = await getOrCreateDeviceId();
           const user = await fetchMe(deviceId);
           setScreen({ status: "ready", user });
+          scheduleStreakReminder(user.lastActivityAt).catch(() => {});
         } catch {
           // best-effort refresh — keep showing the last known totals rather than bouncing
           // to an error screen over a transient refetch failure
@@ -115,8 +119,9 @@ export default function HomeScreen() {
     setBusy(true);
     try {
       const deviceId = await getOrCreateDeviceId();
-      const { streak } = await pingStreak(deviceId);
-      setScreen({ status: "ready", user: { ...screen.user, streak } });
+      const { streak, lastActivityAt } = await pingStreak(deviceId);
+      setScreen({ status: "ready", user: { ...screen.user, streak, lastActivityAt } });
+      scheduleStreakReminder(lastActivityAt).catch(() => {});
     } catch (err) {
       setScreen({ status: "error", message: err instanceof Error ? err.message : "Check-in failed." });
     } finally {
