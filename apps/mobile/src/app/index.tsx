@@ -7,7 +7,7 @@ import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import type { User } from "@asaase/shared";
+import { useUserStore } from "../store/userStore";
 import { bootstrapDevice, fetchMe, pingStreak, submitQuiz } from "../lib/api";
 import { getOrCreateDeviceId } from "../lib/device";
 import { scheduleStreakReminder } from "../lib/streakReminder";
@@ -15,8 +15,6 @@ import { scheduleStreakReminder } from "../lib/streakReminder";
 // ponytail: flat threshold, no XP curve — every 100 XP is one level. Revisit only if a designer
 // asks for level-scaling; a naive constant is the whole feature until then.
 const XP_PER_LEVEL = 100;
-
-type Screen = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; user: User };
 
 function levelInfo(xp: number) {
   const level = Math.floor(xp / XP_PER_LEVEL) + 1;
@@ -73,22 +71,22 @@ function XpBar({ xp }: { xp: number }) {
 }
 
 export default function HomeScreen() {
-  const [screen, setScreen] = useState<Screen>({ status: "loading" });
+  const { user, status, errorMessage, setUser, setStatus } = useUserStore();
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    setScreen({ status: "loading" });
+    setStatus("loading");
     try {
       const deviceId = await getOrCreateDeviceId();
       await bootstrapDevice(deviceId); // first-launch upsert, no-op after (ORCHESTRATOR_CONTRACT.md §6)
-      const user = await fetchMe(deviceId);
-      setScreen({ status: "ready", user });
+      const fetchedUser = await fetchMe(deviceId);
+      setUser(fetchedUser);
       // A-06, best-effort local reminder only — never let a scheduling hiccup break the screen.
-      scheduleStreakReminder(user.lastActivityAt).catch(() => {});
+      scheduleStreakReminder(fetchedUser.lastActivityAt).catch(() => {});
     } catch (err) {
-      setScreen({ status: "error", message: err instanceof Error ? err.message : "Could not reach Asaase." });
+      setStatus("error", err instanceof Error ? err.message : "Could not reach Asaase.");
     }
-  }, []);
+  }, [setStatus, setUser]);
 
   useEffect(() => {
     load();
@@ -98,31 +96,31 @@ export default function HomeScreen() {
   // totals whenever the user returns here instead of trusting whatever was last rendered.
   useFocusEffect(
     useCallback(() => {
-      if (screen.status !== "ready") return;
+      if (status !== "ready") return;
       (async () => {
         try {
           const deviceId = await getOrCreateDeviceId();
-          const user = await fetchMe(deviceId);
-          setScreen({ status: "ready", user });
-          scheduleStreakReminder(user.lastActivityAt).catch(() => {});
+          const fetchedUser = await fetchMe(deviceId);
+          setUser(fetchedUser);
+          scheduleStreakReminder(fetchedUser.lastActivityAt).catch(() => {});
         } catch {
           // best-effort refresh — keep showing the last known totals rather than bouncing
           // to an error screen over a transient refetch failure
         }
       })();
-    }, [screen.status]),
+    }, [status, setUser]),
   );
 
   async function handleCheckIn() {
-    if (screen.status !== "ready" || busy) return;
+    if (status !== "ready" || busy || !user) return;
     setBusy(true);
     try {
       const deviceId = await getOrCreateDeviceId();
       const { streak, lastActivityAt } = await pingStreak(deviceId);
-      setScreen({ status: "ready", user: { ...screen.user, streak, lastActivityAt } });
+      setUser({ ...user, streak, lastActivityAt });
       scheduleStreakReminder(lastActivityAt).catch(() => {});
     } catch (err) {
-      setScreen({ status: "error", message: err instanceof Error ? err.message : "Check-in failed." });
+      setStatus("error", err instanceof Error ? err.message : "Check-in failed.");
     } finally {
       setBusy(false);
     }
@@ -132,24 +130,24 @@ export default function HomeScreen() {
   // (T12) and scan (T13) flows. This button proves the flame/XP/haptic mechanism end to end
   // against the real backend now, without waiting on those screens.
   async function handleLogEcoAction() {
-    if (screen.status !== "ready" || busy) return;
+    if (status !== "ready" || busy || !user) return;
     setBusy(true);
-    const prevTokens = screen.user.tokens;
+    const prevTokens = user.tokens;
     try {
       const deviceId = await getOrCreateDeviceId();
       const { xp, tokens } = await submitQuiz(deviceId, "manual-checkin", true);
       if (tokens > prevTokens) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      setScreen({ status: "ready", user: { ...screen.user, xp, tokens } });
+      setUser({ ...user, xp, tokens });
     } catch (err) {
-      setScreen({ status: "error", message: err instanceof Error ? err.message : "Action failed." });
+      setStatus("error", err instanceof Error ? err.message : "Action failed.");
     } finally {
       setBusy(false);
     }
   }
 
-  if (screen.status === "loading") {
+  if (status === "loading" || !user) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-forest-deep">
         <ActivityIndicator color="#d9ac39" />
@@ -158,19 +156,17 @@ export default function HomeScreen() {
     );
   }
 
-  if (screen.status === "error") {
+  if (status === "error") {
     return (
       <SafeAreaView className="flex-1 items-center justify-center gap-4 bg-forest-deep px-8">
         <Ionicons name="alert-circle" size={40} color="#b8382f" />
-        <Text className="text-center text-base text-text-on-dark">{screen.message}</Text>
+        <Text className="text-center text-base text-text-on-dark">{errorMessage}</Text>
         <TouchableOpacity onPress={load} className="rounded-full bg-gold px-6 py-3 active:scale-95">
           <Text className="font-semibold text-forest-deep">Try again</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
   }
-
-  const { user } = screen;
 
   return (
     <SafeAreaView className="flex-1 bg-forest-deep">
