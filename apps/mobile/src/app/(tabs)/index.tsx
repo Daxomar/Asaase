@@ -42,10 +42,20 @@ function StreakIcon({ streak }: { streak: number }) {
 
 function XpBar({ xp }: { xp: number }) {
   const { level, inLevel, progress } = levelInfo(xp);
-  const width = useSharedValue(0);
+  const width = useSharedValue(progress);
 
   useEffect(() => {
-    width.value = withTiming(progress, { duration: 700 });
+    if (width.value > progress && width.value > 0.8) {
+      // Animate to full, snap to 0, then animate to new progress
+      width.value = withTiming(1, { duration: 300 }, (finished) => {
+        if (finished) {
+          width.value = 0;
+          width.value = withTiming(progress, { duration: 500 });
+        }
+      });
+    } else {
+      width.value = withTiming(progress, { duration: 700 });
+    }
   }, [progress, width]);
 
   const fillStyle = useAnimatedStyle(() => ({ width: `${width.value * 100}%` }));
