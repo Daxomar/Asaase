@@ -3,13 +3,13 @@ import * as Haptics from "expo-haptics";
 import { router, useFocusEffect } from "expo-router";
 import { MotiView } from "moti";
 import { useCallback, useEffect } from "react";
-import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useUserStore } from "../store/userStore";
-import { bootstrapDevice, fetchMe } from "../lib/api";
-import { getOrCreateDeviceId } from "../lib/device";
-import { scheduleStreakReminder } from "../lib/streakReminder";
+import { useUserStore } from "../../store/userStore";
+import { bootstrapDevice, fetchMe } from "../../lib/api";
+import { getOrCreateDeviceId } from "../../lib/device";
+import { scheduleStreakReminder } from "../../lib/streakReminder";
 
 // ponytail: flat threshold, no XP curve — every 100 XP is one level. Revisit only if a designer
 // asks for level-scaling; a naive constant is the whole feature until then.
@@ -43,8 +43,9 @@ type QuickActionCardProps = {
   onPress: () => void;
 };
 
-// The four required home-screen surfaces (learning path, scan-to-earn, point store, map/impact)
-// all render through this one card shape — same tap-target, same anatomy, differ only by content.
+// The six home-screen surfaces (learning path, quiz, scan-to-earn, point store,
+// daily check-in, flood map) all render through this one card shape — same
+// tap-target, same anatomy, differ only by content.
 function QuickActionCard({ icon, iconBg, iconColor, title, subtitle, onPress }: QuickActionCardProps) {
   return (
     <TouchableOpacity
@@ -139,29 +140,53 @@ export default function HomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Header panel — identity + at-a-glance stats, brand green chrome (reserved for
-          headers/nav, not full-screen surfaces — matches the dashboard's own rule). */}
-      <MotiView
-        from={{ opacity: 0, translateY: -8 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 350 }}
-        className="rounded-b-[28px] px-6 pb-7 pt-4"
-        style={{ backgroundColor: ACCENT }}
-      >
-        <Text className="text-2xl font-bold text-white">Asaase</Text>
-        <Text className="text-sm text-white/70">Climate Resolution</Text>
+          headers/nav, not full-screen surfaces — matches the dashboard's own rule).
+          Tapping the stats row drills into the full streak/XP/check-in screen. */}
+      <TouchableOpacity activeOpacity={0.9} onPress={() => router.push("/progress")}>
+        <MotiView
+          from={{ opacity: 0, translateY: -8 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: "timing", duration: 350 }}
+          className="rounded-b-[28px] px-6 pb-7 pt-4"
+          style={{ backgroundColor: ACCENT }}
+        >
+          <View className="flex-row items-center justify-between">
+            <View>
+              <Text className="text-2xl font-bold text-white">Asaase</Text>
+              <Text className="text-sm text-white/70">Climate Resolution</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
+          </View>
 
-        <View className="mt-6 flex-row justify-between pr-4">
-          <StatBlock value={user.streak} label="Day streak" />
-          <StatBlock value={levelOf(user.xp)} label="Level" />
-          <StatBlock value={user.tokens} label="Eco-Tokens" />
-        </View>
-      </MotiView>
+          <View className="mt-6 flex-row justify-between pr-4">
+            <StatBlock value={user.streak} label="Day streak" />
+            <StatBlock value={levelOf(user.xp)} label="Level" />
+            <StatBlock value={user.tokens} label="Eco-Tokens" />
+          </View>
+        </MotiView>
+      </TouchableOpacity>
 
-      {/* Quick actions — the four surfaces every visit needs to surface: scan-to-earn, the
-          learning path, the point store, and community/map impact. */}
+      {/* Quick actions — the six surfaces every visit needs: learning path, quiz,
+          scan-to-earn, the point store, daily check-in, and the flood map. */}
       <View className="flex-1 px-6 pt-6">
         <Text className="mb-3 text-[15px] font-semibold text-black">Quick actions</Text>
         <View className="flex-row flex-wrap justify-between gap-y-3">
+          <QuickActionCard
+            icon="school"
+            iconBg={ACCENT_SOFT}
+            iconColor={ACCENT}
+            title="Learning path"
+            subtitle="Grow your eco-score"
+            onPress={() => router.push("/learn")}
+          />
+          <QuickActionCard
+            icon="help-circle"
+            iconBg={ACCENT_SOFT}
+            iconColor={ACCENT}
+            title="Take a quiz"
+            subtitle="Test what you've learned"
+            onPress={() => router.push("/quiz")}
+          />
           <QuickActionCard
             icon="camera"
             iconBg={ACCENT_SOFT}
@@ -169,14 +194,6 @@ export default function HomeScreen() {
             title="Scan a drain"
             subtitle="Earn points instantly"
             onPress={() => router.push("/scan")}
-          />
-          <QuickActionCard
-            icon="school"
-            iconBg={ACCENT_SOFT}
-            iconColor={ACCENT}
-            title="Learning path"
-            subtitle="Grow your eco-score"
-            onPress={() => router.push("/quiz")}
           />
           <QuickActionCard
             icon="gift"
@@ -187,17 +204,20 @@ export default function HomeScreen() {
             onPress={() => router.push("/marketplace")}
           />
           <QuickActionCard
+            icon="flame"
+            iconBg="#FFF1E0"
+            iconColor="#ff9600"
+            title="Daily check-in"
+            subtitle={`${user.streak}-day streak`}
+            onPress={() => router.push("/progress")}
+          />
+          <QuickActionCard
             icon="map"
             iconBg={ACCENT_SOFT}
             iconColor={ACCENT}
             title="Flood map"
             subtitle="See risk near you"
-            onPress={() =>
-              // No mobile map screen exists yet (PRD's mobile inventory is Home/Quiz/Scan/
-              // Marketplace only — the live map is the web dashboard). Placeholder, not a
-              // silent dead route, until a real in-app map screen is built.
-              Alert.alert("Flood map", "Coming soon on mobile — live now on the web dashboard.")
-            }
+            onPress={() => router.push("/map")}
           />
         </View>
       </View>
