@@ -25,15 +25,6 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="learn"
         options={{
           title: "Learn",
@@ -48,6 +39,15 @@ export default function TabsLayout() {
           title: "Quiz",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? "help-circle" : "help-circle-outline"} size={size} color={color} />
+          ),
+        }}
+      />
+            <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
           ),
         }}
       />
