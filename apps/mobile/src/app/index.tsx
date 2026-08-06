@@ -2,13 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router, useFocusEffect } from "expo-router";
 import { MotiView } from "moti";
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { useCallback, useEffect } from "react";
+import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useUserStore } from "../store/userStore";
-import { bootstrapDevice, fetchMe, pingStreak, submitQuiz } from "../lib/api";
+import { bootstrapDevice, fetchMe } from "../lib/api";
 import { getOrCreateDeviceId } from "../lib/device";
 import { scheduleStreakReminder } from "../lib/streakReminder";
 
@@ -16,63 +15,64 @@ import { scheduleStreakReminder } from "../lib/streakReminder";
 // asks for level-scaling; a naive constant is the whole feature until then.
 const XP_PER_LEVEL = 100;
 
-function levelInfo(xp: number) {
-  const level = Math.floor(xp / XP_PER_LEVEL) + 1;
-  const inLevel = xp % XP_PER_LEVEL;
-  return { level, inLevel, progress: inLevel / XP_PER_LEVEL };
+const ACCENT = "#3F7B1E";
+const ACCENT_SOFT = "#F2F8EC";
+const AMBER = "#d9ac39";
+
+function levelOf(xp: number) {
+  return Math.floor(xp / XP_PER_LEVEL) + 1;
 }
 
-// Animated flame/shield: shield while the streak is dormant (0), flame once it's alive, with a
-// slow breathing loop that only runs while lit — reduce-motion is inherited for free since
-// Reanimated's withTiming/withSpring default to ReducedMotion.System (honors the OS setting).
-function StreakIcon({ streak }: { streak: number }) {
-  const active = streak > 0;
+function StatBlock({ value, label }: { value: string | number; label: string }) {
   return (
-    <MotiView
-      from={{ opacity: 0, scale: 0.7 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: "spring", damping: 14 }}
-      className="h-28 w-28 items-center justify-center rounded-full"
-      style={{ backgroundColor: active ? "rgba(217,172,57,0.16)" : "rgba(30,138,70,0.14)" }}
-    >
-      <MotiView
-        animate={{ scale: active ? 1.08 : 1 }}
-        transition={{ type: "timing", duration: 1100, loop: active, repeatReverse: true }}
-      >
-        <Ionicons name={active ? "flame" : "shield-checkmark"} size={52} color={active ? "#d9ac39" : "#1e8a46"} />
-      </MotiView>
-    </MotiView>
+    <View>
+      <Text className="text-[28px] font-bold text-white">{value}</Text>
+      <Text className="mt-0.5 text-[11px] uppercase tracking-wide text-white/70">
+        {label}
+      </Text>
+    </View>
   );
 }
 
-function XpBar({ xp }: { xp: number }) {
-  const { level, inLevel, progress } = levelInfo(xp);
-  const width = useSharedValue(0);
+type QuickActionCardProps = {
+  icon: keyof typeof Ionicons.glyphMap;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+};
 
-  useEffect(() => {
-    width.value = withTiming(progress, { duration: 700 });
-  }, [progress, width]);
-
-  const fillStyle = useAnimatedStyle(() => ({ width: `${width.value * 100}%` }));
-
+// The four required home-screen surfaces (learning path, scan-to-earn, point store, map/impact)
+// all render through this one card shape — same tap-target, same anatomy, differ only by content.
+function QuickActionCard({ icon, iconBg, iconColor, title, subtitle, onPress }: QuickActionCardProps) {
   return (
-    <View className="w-full gap-2">
-      <View className="flex-row items-baseline justify-between">
-        <Text className="text-sm font-semibold text-text-on-dark">Level {level}</Text>
-        <Text className="text-xs text-text-on-dark-muted">
-          {inLevel} / {XP_PER_LEVEL} XP
-        </Text>
+    <TouchableOpacity
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+      }}
+      activeOpacity={0.85}
+      className="w-[48%] rounded-2xl border border-gray-100 bg-white p-4"
+      style={{
+        shadowColor: "#000",
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 1,
+      }}
+    >
+      <View className="h-11 w-11 items-center justify-center rounded-full" style={{ backgroundColor: iconBg }}>
+        <Ionicons name={icon} size={20} color={iconColor} />
       </View>
-      <View className="h-3 w-full overflow-hidden rounded-full bg-forest-ink">
-        <Animated.View style={fillStyle} className="h-full rounded-full bg-gold" />
-      </View>
-    </View>
+      <Text className="mt-3 text-[15px] font-semibold text-black">{title}</Text>
+      <Text className="mt-1 text-xs text-text-on-dark-muted">{subtitle}</Text>
+    </TouchableOpacity>
   );
 }
 
 export default function HomeScreen() {
   const { user, status, errorMessage, setUser, setStatus } = useUserStore();
-  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     setStatus("loading");
@@ -92,7 +92,7 @@ export default function HomeScreen() {
     load();
   }, [load]);
 
-  // Quiz (T12) awards XP/tokens server-side while this screen is off-focus. Re-pull the real
+  // Quiz/scan award XP/tokens server-side while this screen is off-focus. Re-pull the real
   // totals whenever the user returns here instead of trusting whatever was last rendered.
   useFocusEffect(
     useCallback(() => {
@@ -111,46 +111,10 @@ export default function HomeScreen() {
     }, [status, setUser]),
   );
 
-  async function handleCheckIn() {
-    if (status !== "ready" || busy || !user) return;
-    setBusy(true);
-    try {
-      const deviceId = await getOrCreateDeviceId();
-      const { streak, lastActivityAt } = await pingStreak(deviceId);
-      setUser({ ...user, streak, lastActivityAt });
-      scheduleStreakReminder(lastActivityAt).catch(() => {});
-    } catch (err) {
-      setStatus("error", err instanceof Error ? err.message : "Check-in failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  // Stand-in trigger for this task only: the real token-increment moment ships with the quiz
-  // (T12) and scan (T13) flows. This button proves the flame/XP/haptic mechanism end to end
-  // against the real backend now, without waiting on those screens.
-  async function handleLogEcoAction() {
-    if (status !== "ready" || busy || !user) return;
-    setBusy(true);
-    const prevTokens = user.tokens;
-    try {
-      const deviceId = await getOrCreateDeviceId();
-      const { xp, tokens } = await submitQuiz(deviceId, "manual-checkin", true);
-      if (tokens > prevTokens) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-      setUser({ ...user, xp, tokens });
-    } catch (err) {
-      setStatus("error", err instanceof Error ? err.message : "Action failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   if (status === "loading" || !user) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-forest-deep">
-        <ActivityIndicator color="#d9ac39" />
+      <SafeAreaView className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator color={ACCENT} />
         <Text className="mt-3 text-sm text-text-on-dark-muted">Loading your flood watch…</Text>
       </SafeAreaView>
     );
@@ -158,80 +122,83 @@ export default function HomeScreen() {
 
   if (status === "error") {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center gap-4 bg-forest-deep px-8">
+      <SafeAreaView className="flex-1 items-center justify-center gap-4 bg-white px-8">
         <Ionicons name="alert-circle" size={40} color="#b8382f" />
-        <Text className="text-center text-base text-text-on-dark">{errorMessage}</Text>
-        <TouchableOpacity onPress={load} className="rounded-full bg-gold px-6 py-3 active:scale-95">
-          <Text className="font-semibold text-forest-deep">Try again</Text>
+        <Text className="text-center text-base text-black">{errorMessage}</Text>
+        <TouchableOpacity
+          onPress={load}
+          className="rounded-full px-6 py-3 active:scale-95"
+          style={{ backgroundColor: ACCENT }}
+        >
+          <Text className="font-semibold text-white">Try again</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-forest-deep">
-      <View className="flex-1 justify-between px-6 py-8">
-        <View>
-          <Text className="text-2xl font-bold text-text-on-dark">Asaase</Text>
-          <Text className="text-sm text-text-on-dark-muted">Climate Resolution</Text>
+    <SafeAreaView className="flex-1 bg-white">
+      {/* Header panel — identity + at-a-glance stats, brand green chrome (reserved for
+          headers/nav, not full-screen surfaces — matches the dashboard's own rule). */}
+      <MotiView
+        from={{ opacity: 0, translateY: -8 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: "timing", duration: 350 }}
+        className="rounded-b-[28px] px-6 pb-7 pt-4"
+        style={{ backgroundColor: ACCENT }}
+      >
+        <Text className="text-2xl font-bold text-white">Asaase</Text>
+        <Text className="text-sm text-white/70">Climate Resolution</Text>
+
+        <View className="mt-6 flex-row justify-between pr-4">
+          <StatBlock value={user.streak} label="Day streak" />
+          <StatBlock value={levelOf(user.xp)} label="Level" />
+          <StatBlock value={user.tokens} label="Eco-Tokens" />
         </View>
+      </MotiView>
 
-        <View className="items-center gap-8">
-          <StreakIcon streak={user.streak} />
-          <View className="items-center gap-1">
-            <Text className="text-4xl font-bold text-text-on-dark">{user.streak}</Text>
-            <Text className="text-sm uppercase tracking-wide text-text-on-dark-muted">
-              day streak
-            </Text>
-          </View>
-
-          <XpBar xp={user.xp} />
-
-          <View className="flex-row items-center gap-2 rounded-full bg-forest-ink px-4 py-2">
-            <Ionicons name="leaf" size={16} color="#d9ac39" />
-            <Text className="text-sm font-medium text-text-on-dark">{user.tokens} Eco-Tokens</Text>
-          </View>
-        </View>
-
-        <View className="gap-3">
-          <TouchableOpacity
-            onPress={handleCheckIn}
-            disabled={busy}
-            className="items-center rounded-full bg-green px-6 py-4 active:scale-95 disabled:opacity-50"
-          >
-            <Text className="font-semibold text-text-on-dark">Check in today</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+      {/* Quick actions — the four surfaces every visit needs to surface: scan-to-earn, the
+          learning path, the point store, and community/map impact. */}
+      <View className="flex-1 px-6 pt-6">
+        <Text className="mb-3 text-[15px] font-semibold text-black">Quick actions</Text>
+        <View className="flex-row flex-wrap justify-between gap-y-3">
+          <QuickActionCard
+            icon="camera"
+            iconBg={ACCENT_SOFT}
+            iconColor={ACCENT}
+            title="Scan a drain"
+            subtitle="Earn points instantly"
             onPress={() => router.push("/scan")}
-            disabled={busy}
-            className="flex-row items-center justify-center gap-2 rounded-full bg-forest-ink px-6 py-4 active:scale-95 disabled:opacity-50"
-          >
-            <Ionicons name="camera" size={18} color="#d9ac39" />
-            <Text className="font-semibold text-text-on-dark">Scan a drain</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          />
+          <QuickActionCard
+            icon="school"
+            iconBg={ACCENT_SOFT}
+            iconColor={ACCENT}
+            title="Learning path"
+            subtitle="Grow your eco-score"
             onPress={() => router.push("/quiz")}
-            disabled={busy}
-            className="flex-row items-center justify-center gap-2 rounded-full bg-forest-ink px-6 py-4 active:scale-95 disabled:opacity-50"
-          >
-            <Ionicons name="school" size={18} color="#d9ac39" />
-            <Text className="font-semibold text-text-on-dark">Take the eco quiz</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          />
+          <QuickActionCard
+            icon="gift"
+            iconBg="#FAF0D6"
+            iconColor={AMBER}
+            title="Point store"
+            subtitle={`${user.tokens} tokens available`}
             onPress={() => router.push("/marketplace")}
-            disabled={busy}
-            className="flex-row items-center justify-center gap-2 rounded-full bg-forest-ink px-6 py-4 active:scale-95 disabled:opacity-50"
-          >
-            <Ionicons name="gift" size={18} color="#d9ac39" />
-            <Text className="font-semibold text-text-on-dark">Redeem Eco-Tokens</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleLogEcoAction}
-            disabled={busy}
-            className="items-center rounded-full border border-gold px-6 py-4 active:scale-95 disabled:opacity-50"
-          >
-            <Text className="font-semibold text-gold">Log eco action</Text>
-          </TouchableOpacity>
+          />
+          <QuickActionCard
+            icon="map"
+            iconBg={ACCENT_SOFT}
+            iconColor={ACCENT}
+            title="Flood map"
+            subtitle="See risk near you"
+            onPress={() =>
+              // No mobile map screen exists yet (PRD's mobile inventory is Home/Quiz/Scan/
+              // Marketplace only — the live map is the web dashboard). Placeholder, not a
+              // silent dead route, until a real in-app map screen is built.
+              Alert.alert("Flood map", "Coming soon on mobile — live now on the web dashboard.")
+            }
+          />
         </View>
       </View>
     </SafeAreaView>
