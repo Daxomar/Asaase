@@ -173,7 +173,7 @@ export default function HomeScreen() {
       <View className="flex-1 justify-between px-6 py-8">
         <View>
           <Text className="text-2xl font-bold text-text-on-dark">Asaase</Text>
-          <Text className="text-sm text-text-on-dark-muted">Your flood-watch profile</Text>
+          <Text className="text-sm text-text-on-dark-muted">Climate Resolution</Text>
         </View>
 
         <View className="items-center gap-8">

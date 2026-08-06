@@ -5,18 +5,21 @@ interface UserState {
   user: User | null;
   status: 'loading' | 'ready' | 'error';
   errorMessage: string | null;
+  hasCompletedOnboarding: boolean;
   
   // Actions
   setUser: (user: User) => void;
   setStatus: (status: 'loading' | 'ready' | 'error', errorMessage?: string) => void;
   incrementXp: (amount: number) => void;
   updateStreak: (newStreak: number) => void;
+  completeOnboarding: () => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
   user: null,
   status: 'loading',
   errorMessage: null,
+  hasCompletedOnboarding: false,
 
   setUser: (user) => set({ user, status: 'ready', errorMessage: null }),
   
@@ -28,5 +31,7 @@ export const useUserStore = create<UserState>((set) => ({
   
   updateStreak: (newStreak) => set((state) => ({
     user: state.user ? { ...state.user, streak: newStreak } : null
-  }))
+  })),
+
+  completeOnboarding: () => set({ hasCompletedOnboarding: true })
 }));
