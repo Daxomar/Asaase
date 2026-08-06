@@ -148,7 +148,7 @@ export default function HomeScreen() {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-white">
         <ActivityIndicator color="#58cc02" />
-        <Text className="mt-3 text-sm font-medium text-gray-500">Loading your profile…</Text>
+        <Text className="mt-3 text-sm font-medium text-gray-500">Loading your profile...</Text>
       </SafeAreaView>
     );
   }

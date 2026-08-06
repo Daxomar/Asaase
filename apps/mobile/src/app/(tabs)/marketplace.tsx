@@ -152,7 +152,7 @@ export default function MarketplaceScreen() {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-forest-deep">
         <ActivityIndicator color="#d9ac39" />
-        <Text className="mt-3 text-sm text-text-on-dark-muted">Loading rewards…</Text>
+        <Text className="mt-3 text-sm text-text-on-dark-muted">Loading rewards...</Text>
       </SafeAreaView>
     );
   }

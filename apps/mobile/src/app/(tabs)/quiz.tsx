@@ -3,7 +3,7 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { MotiView } from "moti";
 import { useState } from "react";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { submitQuiz } from "../../lib/api";
@@ -14,6 +14,44 @@ import { getOrCreateDeviceId } from "../../lib/device";
 // quiz reinforces what the scanner is actually looking for; doesn't need to match any prior
 // wording word-for-word (T12 was rebuilt from scratch per T12-remediation).
 type Question = { id: string; prompt: string; options: string[]; correctIndex: number };
+type LearningModule = {
+  id: string;
+  title: string;
+  theme: string;
+  outcome: string;
+  icon: keyof typeof Ionicons.glyphMap;
+};
+
+const LEARNING_PATH: LearningModule[] = [
+  {
+    id: "ghana-climate-risk",
+    title: "Climate change in Ghana",
+    theme: "Foundation",
+    outcome: "Connect rainfall shifts, heat, flooding and local adaptation choices.",
+    icon: "rainy",
+  },
+  {
+    id: "urban-flood-readiness",
+    title: "Urban flood readiness",
+    theme: "Resilience",
+    outcome: "Spot drainage risks early and know the safer response before storms peak.",
+    icon: "warning",
+  },
+  {
+    id: "circular-waste",
+    title: "Circular economy and waste",
+    theme: "Green economy",
+    outcome: "Treat plastics as recoverable material, not drain-bound flood fuel.",
+    icon: "sync",
+  },
+  {
+    id: "green-careers",
+    title: "Green jobs and civic leadership",
+    theme: "Pathways",
+    outcome: "See climate action as skills, livelihoods and community leadership.",
+    icon: "briefcase",
+  },
+];
 
 const QUESTIONS: Question[] = [
   {
@@ -114,9 +152,11 @@ export default function QuizScreen() {
   }
 
   if (screen.status === "done") {
+    const earnedModules = Math.min(screen.correctCount, LEARNING_PATH.length);
+
     return (
       <SafeAreaView className="flex-1 bg-forest-deep">
-        <View className="flex-1 items-center justify-center gap-6 px-8">
+        <ScrollView contentContainerClassName="flex-grow items-center justify-center gap-6 px-8 py-10">
           <MotiView
             from={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -131,6 +171,9 @@ export default function QuizScreen() {
             <Text className="text-sm text-text-on-dark-muted">
               {screen.correctCount} / {QUESTIONS.length} correct
             </Text>
+            <Text className="mt-2 text-center text-sm text-text-on-dark-muted">
+              {earnedModules} GreenReS learning modules strengthened today.
+            </Text>
           </View>
           <View className="flex-row gap-4">
             <View className="items-center rounded-2xl bg-forest-ink px-5 py-3">
@@ -142,19 +185,39 @@ export default function QuizScreen() {
               <Text className="text-xs text-text-on-dark-muted">Eco-Tokens</Text>
             </View>
           </View>
+          <View className="w-full gap-2">
+            {LEARNING_PATH.map((module, index) => {
+              const unlocked = index < earnedModules;
+              return (
+                <View
+                  key={module.id}
+                  className={`flex-row items-center gap-3 rounded-2xl border px-4 py-3 ${
+                    unlocked ? "border-gold/50 bg-gold/10" : "border-forest-ink bg-forest-ink/50"
+                  }`}
+                >
+                  <Ionicons name={unlocked ? "checkmark-circle" : module.icon} size={20} color={unlocked ? "#d9ac39" : "#9fb0a2"} />
+                  <View className="flex-1">
+                    <Text className="text-sm font-semibold text-text-on-dark">{module.title}</Text>
+                    <Text className="text-xs text-text-on-dark-muted">{module.theme}</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
           <TouchableOpacity onPress={() => router.back()} className="items-center rounded-full bg-gold px-6 py-4 active:scale-95">
             <Text className="font-semibold text-forest-deep">Back to home</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
   const question = QUESTIONS[screen.index]!;
+  const activeModule = LEARNING_PATH[screen.index % LEARNING_PATH.length]!;
 
   return (
     <SafeAreaView className="flex-1 bg-forest-deep">
-      <View className="flex-1 px-6 py-6">
+      <ScrollView contentContainerClassName="flex-grow px-6 py-6">
         <View className="mb-6 flex-row items-center justify-between">
           <TouchableOpacity onPress={() => router.back()} className="p-1">
             <Ionicons name="chevron-back" size={24} color="#f3f1e6" />
@@ -162,6 +225,19 @@ export default function QuizScreen() {
           <Text className="text-sm text-text-on-dark-muted">
             {screen.index + 1} / {QUESTIONS.length}
           </Text>
+        </View>
+
+        <View className="mb-6 rounded-3xl border border-gold/20 bg-forest-ink p-5">
+          <View className="mb-3 flex-row items-center gap-2">
+            <View className="h-9 w-9 items-center justify-center rounded-full bg-gold/15">
+              <Ionicons name={activeModule.icon} size={18} color="#d9ac39" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-xs font-semibold uppercase text-gold">{activeModule.theme}</Text>
+              <Text className="text-base font-bold text-text-on-dark">{activeModule.title}</Text>
+            </View>
+          </View>
+          <Text className="text-sm leading-5 text-text-on-dark-muted">{activeModule.outcome}</Text>
         </View>
 
         <Text className="mb-8 text-xl font-bold text-text-on-dark">{question.prompt}</Text>
@@ -210,7 +286,7 @@ export default function QuizScreen() {
             <ActivityIndicator color="#d9ac39" />
           </View>
         ) : null}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

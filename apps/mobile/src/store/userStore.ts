@@ -9,7 +9,7 @@ interface UserState {
   
   // Actions
   setUser: (user: User) => void;
-  setStatus: (status: 'loading' | 'ready' | 'error', errorMessage?: string) => void;
+  setStatus: (status: 'loading' | 'ready' | 'error', errorMessage?: string | null) => void;
   incrementXp: (amount: number) => void;
   updateStreak: (newStreak: number) => void;
   completeOnboarding: () => void;

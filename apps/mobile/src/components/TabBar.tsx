@@ -1,4 +1,3 @@
-import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useEffect } from "react";
 import Animated, {
   useSharedValue,
@@ -23,7 +22,22 @@ type TabConfig = {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   activeIcon: keyof typeof Ionicons.glyphMap;
-  name: string; // The route name
+  name: string;
+};
+
+type TabBarProps = {
+  state: {
+    index: number;
+    routes: Array<{ key: string; name: string }>;
+  };
+  navigation: {
+    emit: (event: {
+      type: "tabPress";
+      target: string;
+      canPreventDefault: true;
+    }) => { defaultPrevented: boolean };
+    navigate: (name: string) => void;
+  };
 };
 
 const TABS: TabConfig[] = [
@@ -33,7 +47,7 @@ const TABS: TabConfig[] = [
   { label: "Market", icon: "gift-outline", activeIcon: "gift", name: "marketplace" },
 ];
 
-export function TabBar({ state, navigation }: BottomTabBarProps) {
+export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const tabWidth = SCREEN_WIDTH / TABS.length;
 
@@ -57,9 +71,9 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
       <Animated.View style={[styles.indicator, indicatorStyle]} />
 
       {state.routes.map((route, index) => {
-        // Fallback for route mapping in case of mismatches
         const tabIndex = TABS.findIndex(t => t.name === route.name);
         const tab = TABS[tabIndex !== -1 ? tabIndex : index];
+        if (!tab) return null;
         const isFocused = state.index === index;
 
         const onPress = () => {
