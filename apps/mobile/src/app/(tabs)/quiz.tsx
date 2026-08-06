@@ -6,8 +6,8 @@ import { useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { submitQuiz } from "../lib/api";
-import { getOrCreateDeviceId } from "../lib/device";
+import { submitQuiz } from "../../lib/api";
+import { getOrCreateDeviceId } from "../../lib/device";
 
 // PRD FEAT-002 / A-07 — fresh Ghana flood + eco-awareness content. Loosely mapped onto the same
 // 4 blockage types scan.tsx renders (sachet water rubbers, PET bottles, silt/sand, weeds) so the

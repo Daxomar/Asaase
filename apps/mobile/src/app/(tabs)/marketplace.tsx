@@ -8,8 +8,8 @@ import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ApiError, fetchMe, redeemReward } from "../lib/api";
-import { getOrCreateDeviceId } from "../lib/device";
+import { ApiError, fetchMe, redeemReward } from "../../lib/api";
+import { getOrCreateDeviceId } from "../../lib/device";
 
 // CATALOG GAP (flagging for orchestrator, not silently working around it): ORCHESTRATOR_CONTRACT
 // §3's route table only names POST /api/marketplace/redeem for T10 — no GET catalog-listing
@@ -218,7 +218,7 @@ export default function MarketplaceScreen() {
         <View className="absolute inset-0 items-center justify-center" pointerEvents="none">
           <LottieView
             // eslint-disable-next-line @typescript-eslint/no-require-imports -- RN static asset loading requires require()
-            source={require("../../assets/lottie/confetti.json")}
+            source={require("../../../assets/lottie/confetti.json")}
             autoPlay
             loop={false}
             style={{ width: 280, height: 320 }}

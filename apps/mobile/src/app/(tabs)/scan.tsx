@@ -9,8 +9,8 @@ import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-na
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { Scan } from "@asaase/shared";
-import { analyzeScan, API_URL } from "../lib/api";
-import { getOrCreateDeviceId } from "../lib/device";
+import { analyzeScan, API_URL } from "../../lib/api";
+import { getOrCreateDeviceId } from "../../lib/device";
 
 // ORCHESTRATOR_CONTRACT.md §7 — human labels for the PRD's 4-value enum, quiz.tsx has no
 // equivalent map since it only names blockages in prose; this is the first screen that renders

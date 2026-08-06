@@ -6,7 +6,7 @@ import LottieView from "lottie-react-native";
 
 export default function OnboardingScreen() {
   return (
-    <SafeAreaView className="flex-1 bg-forest-deep">
+    <SafeAreaView className="flex-1 bg-[#262626]">
       <View className="flex-1 px-6">
         {/* Logo header */}
         <View className="flex-row items-center justify-center gap-2 mt-4">
@@ -19,7 +19,7 @@ export default function OnboardingScreen() {
         {/* Hero heading */}
         <Text className="mt-12 text-4xl font-bold text-text-on-dark text-center">
           {"Welcome to\n"}
-          <Text className="text-gold">Asaase.</Text>
+          <Text className="text-green">Asaase.</Text>
         </Text>
 
         {/* Subtitle */}
