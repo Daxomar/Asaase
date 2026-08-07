@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { MotiView } from "moti";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Modal,
   ScrollView,
@@ -10,53 +11,26 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { lessons, type Lesson } from "../../../data/lessons";
+
+// Deterministic scatter so the background texture doesn't shuffle on every re-render —
+// a soft, low-opacity pattern behind the path (not random noise, same seed every time).
+function scatterDots(width: number, height: number, count: number) {
+  return Array.from({ length: count }, (_, i) => {
+    const seed = i * 97 + 13;
+    return {
+      key: i,
+      left: (((seed * 53) % 100) / 100) * width,
+      top: (((seed * 31) % 100) / 100) * height,
+      size: 4 + (seed % 5),
+    };
+  });
+}
 
 const ACCENT = "#3F7B1E";
 const AMBER = "#d9ac39";
 const LOCKED_BG = "#E5E7EB";
 const LOCKED_ICON = "#9CA3AF";
-
-type Lesson = {
-  id: string;
-  title: string;
-  brief: string;
-  meta: string;
-  icon: keyof typeof Ionicons.glyphMap;
-};
-
-// TODO: replace with real lesson data + progress from backend
-const lessons: Lesson[] = [
-  { id: "1", title: "What is urban flooding?", brief: "Why Accra floods fast: flat terrain, heavy rain, and drains that can't keep up.", meta: "Audio · 3 min", icon: "rainy" },
-  { id: "2", title: "Why storm drains matter", brief: "A single blocked drain can back up an entire street in minutes.", meta: "Article · 2 min", icon: "water" },
-  { id: "3", title: "Common drain blockages", brief: "Sachet water, PET bottles, silt, and weeds — the four things Asaase's AI looks for.", meta: "Article · 3 min", icon: "trash-bin" },
-  { id: "4", title: "Reading a flood risk map", brief: "How to tell a critical chokepoint from a low-risk one at a glance.", meta: "Article · 3 min", icon: "map" },
-  { id: "5", title: "Rainfall & flood thresholds", brief: "Every cluster has a rainfall number that tips it into danger — here's what that means.", meta: "Article · 4 min", icon: "cloud" },
-  { id: "6", title: "Your neighborhood's flood history", brief: "Look up past flood events near where you live.", meta: "Interactive · 5 min", icon: "time" },
-  { id: "7", title: "Building a flood emergency kit", brief: "What to pack before the rainy season peaks.", meta: "Article · 4 min", icon: "medkit" },
-  { id: "8", title: "Flood warning signs & alerts", brief: "How to read a NADMO alert and what each severity level means for you.", meta: "Article · 3 min", icon: "warning" },
-  { id: "9", title: "What to do during a flood warning", brief: "A calm, practical checklist for the first ten minutes.", meta: "Article · 3 min", icon: "alert-circle" },
-  { id: "10", title: "Evacuation routes in Accra", brief: "Know your route before you need it.", meta: "Interactive · 5 min", icon: "navigate" },
-  { id: "11", title: "Protecting your home from water damage", brief: "Cheap, effective steps that make a real difference.", meta: "Article · 4 min", icon: "home" },
-  { id: "12", title: "After the flood: staying safe", brief: "The danger doesn't end when the water goes down.", meta: "Article · 3 min", icon: "shield-checkmark" },
-  { id: "13", title: "How the scan-to-earn system works", brief: "From a photo on your phone to a real entry on the risk map.", meta: "Audio · 3 min", icon: "camera" },
-  { id: "14", title: "Taking a clear drain photo", brief: "The angle and lighting that actually help the AI classify it correctly.", meta: "Article · 2 min", icon: "image" },
-  { id: "15", title: "Understanding blockage types", brief: "Why the AI cares whether it's silt, plastic, or overgrowth.", meta: "Article · 3 min", icon: "layers" },
-  { id: "16", title: "Why GPS accuracy matters", brief: "A few meters of drift can put your scan in the wrong cluster.", meta: "Article · 2 min", icon: "locate" },
-  { id: "17", title: "How AI classifies your scan", brief: "A quick look at what happens between your photo and a confidence score.", meta: "Article · 4 min", icon: "hardware-chip" },
-  { id: "18", title: "From scan to verified cluster", brief: "How PostGIS merges dozens of nearby reports into one dedup'd cluster.", meta: "Article · 4 min", icon: "git-network" },
-  { id: "19", title: "Organizing a neighborhood clean-up", brief: "Turn a cluster of reports into an actual clearing crew.", meta: "Article · 5 min", icon: "people" },
-  { id: "20", title: "Talking to your local assembly", brief: "How to bring verified data into a real conversation with officials.", meta: "Article · 5 min", icon: "chatbubbles" },
-  { id: "21", title: "Reporting risks in your community", brief: "Encouraging your street to scan, not just you.", meta: "Article · 3 min", icon: "megaphone" },
-  { id: "22", title: "Working with NADMO responders", brief: "What emergency crews actually do with a cluster's AI brief.", meta: "Article · 4 min", icon: "construct" },
-  { id: "23", title: "Mentoring new scanners", brief: "Helping someone else complete their first scan.", meta: "Article · 3 min", icon: "school" },
-  { id: "24", title: "Building a scan streak that lasts", brief: "The habit science behind why streaks work — and how to protect one.", meta: "Audio · 4 min", icon: "flame" },
-  { id: "25", title: "Understanding PostGIS clustering", brief: "The 20-metre rule that decides whether two reports are the same chokepoint.", meta: "Article · 5 min", icon: "git-compare" },
-  { id: "26", title: "How severity scores are calculated", brief: "Why severity climbs with every new report at the same spot.", meta: "Article · 4 min", icon: "stats-chart" },
-  { id: "27", title: "Reading the NADMO command map", brief: "The web dashboard municipal responders actually use.", meta: "Interactive · 5 min", icon: "eye" },
-  { id: "28", title: "Rainfall data & early warning systems", brief: "Where real forecast data enters the picture.", meta: "Article · 4 min", icon: "thunderstorm" },
-  { id: "29", title: "Advocating for drainage infrastructure", brief: "Turning a season of data into a funding case.", meta: "Article · 5 min", icon: "trending-up" },
-  { id: "30", title: "Becoming an Asaase community leader", brief: "The full picture — from one scan to a citywide defense network.", meta: "Audio · 5 min", icon: "ribbon" },
-];
 
 const DONE_COUNT = 2; // first N lessons already completed
 const NEXT_ID = lessons[DONE_COUNT]?.id; // the single "up next" node
@@ -88,6 +62,12 @@ export default function LearnScreen() {
   const yFor = (i: number) => i * ROW_HEIGHT + NODE_SIZE / 2;
 
   const doneIds = new Set(lessons.slice(0, DONE_COUNT).map((l) => l.id));
+  const pathHeight = lessons.length * ROW_HEIGHT + NODE_SIZE;
+  const nextDisplayIndex = displayOrder.findIndex((l) => l.id === NEXT_ID);
+  const dots = useMemo(
+    () => scatterDots(screenWidth, pathHeight, Math.round(pathHeight / 90)),
+    [screenWidth, pathHeight],
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -112,7 +92,46 @@ export default function LearnScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingVertical: 24 }}
       >
-        <View style={{ height: lessons.length * ROW_HEIGHT + NODE_SIZE, width: "100%" }}>
+        <View style={{ height: pathHeight, width: "100%" }}>
+          {/* Soft background texture — decorative, sits behind everything else on the path */}
+          {dots.map((d) => (
+            <View
+              key={d.key}
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                left: d.left,
+                top: d.top,
+                width: d.size,
+                height: d.size,
+                borderRadius: d.size / 2,
+                backgroundColor: ACCENT,
+                opacity: 0.06,
+              }}
+            />
+          ))}
+
+          {/* "You are here" marker — floats above the up-next node */}
+          {nextDisplayIndex >= 0 && (
+            <MotiView
+              from={{ translateY: 0 }}
+              animate={{ translateY: -6 }}
+              transition={{ type: "timing", duration: 700, loop: true, repeatReverse: true }}
+              style={{
+                position: "absolute",
+                left: 24 + xFor(nextDisplayIndex) - 60,
+                top: yFor(nextDisplayIndex) - NODE_SIZE / 2 - 54,
+                width: 120,
+                alignItems: "center",
+              }}
+            >
+              <View className="rounded-full px-2.5 py-1" style={{ backgroundColor: AMBER }}>
+                <Text className="text-[10px] font-bold text-white">You are here</Text>
+              </View>
+              <Ionicons name="caret-down" size={16} color={AMBER} style={{ marginTop: -2 }} />
+            </MotiView>
+          )}
+
           {/* Connectors — drawn first so nodes render on top */}
           {displayOrder.map((_, i) => {
             if (i === displayOrder.length - 1) return null;
