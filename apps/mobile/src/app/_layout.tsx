@@ -10,7 +10,7 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    // welcome (onboarding) hands off straight into sign-up/sign-in/verify (auth) — both groups
+    // welcome (onboarding) hands off straight into sign-up/sign-in/verify (auth) - both groups
     // are pre-home territory, so neither should get bounced by the other.
     const inPreOnboardingFlow = segments[0] === "(onboarding)" || segments[0] === "(auth)";
 

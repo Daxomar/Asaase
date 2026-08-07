@@ -1,4 +1,4 @@
-// Anonymous device identity — ORCHESTRATOR_CONTRACT.md §6. Generate once, persist forever.
+// Anonymous device identity - ORCHESTRATOR_CONTRACT.md §6. Generate once, persist forever.
 import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";

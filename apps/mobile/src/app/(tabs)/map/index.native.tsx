@@ -18,7 +18,7 @@ export default function MapScreen() {
   const m = useFloodMap();
 
   // Camera moves are native-map-specific (react-leaflet's web sibling drives its own map
-  // instance the same way) — the shared hook only owns the business state, not the camera.
+  // instance the same way) - the shared hook only owns the business state, not the camera.
   useEffect(() => {
     if (m.selectedCluster) {
       mapRef.current?.animateToRegion(

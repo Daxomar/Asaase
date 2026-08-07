@@ -30,7 +30,7 @@ export default function ProductDetailScreen() {
         </Text>
         <Text className="mt-1 text-2xl font-bold text-black">Product name goes here</Text>
         <Text className="mt-3 text-base leading-6 text-gray-700">
-          Product description goes here — replace with real content fetched by productId.
+          Product description goes here - replace with real content fetched by productId.
         </Text>
 
         <TouchableOpacity

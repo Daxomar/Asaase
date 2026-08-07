@@ -39,9 +39,9 @@ export async function pingStreak(deviceId: string): Promise<{ streak: number; la
   return res.json();
 }
 
-// POST /api/scans/analyze — ORCHESTRATOR_CONTRACT.md §3/§9: multipart/form-data (real file, not
+// POST /api/scans/analyze - ORCHESTRATOR_CONTRACT.md §3/§9: multipart/form-data (real file, not
 // base64), per the contract's deliberate deviation. `photoUri` is a native file:// URI from
-// expo-camera's takePictureAsync — RN's fetch/FormData accepts { uri, name, type } directly.
+// expo-camera's takePictureAsync - RN's fetch/FormData accepts { uri, name, type } directly.
 export async function analyzeScan(
   deviceId: string,
   photoUri: string,
@@ -53,7 +53,7 @@ export async function analyzeScan(
   form.append("latitude", String(latitude));
   form.append("longitude", String(longitude));
 
-  // No Content-Type header — fetch sets the multipart boundary itself; overriding it manually
+  // No Content-Type header - fetch sets the multipart boundary itself; overriding it manually
   // breaks the boundary on RN's fetch implementation.
   const res = await fetch(`${API_URL}/api/scans/analyze`, {
     method: "POST",
@@ -78,9 +78,9 @@ export async function submitQuiz(
   return res.json();
 }
 
-// POST /api/marketplace/redeem — gamification.ts (T10) is authoritative on price + balance (one
+// POST /api/marketplace/redeem - gamification.ts (T10) is authoritative on price + balance (one
 // atomic conditional UPDATE, no read-then-write). `INSUFFICIENT_BALANCE` surfaces as a normal
-// ApiError like any other rejection — callers branch on the message, no separate "blocked" return
+// ApiError like any other rejection - callers branch on the message, no separate "blocked" return
 // shape invented client-side.
 export async function redeemReward(
   deviceId: string,

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { mapClusters, subPointsForCluster, type SubPoint } from "../data/mapClusters";
 
-// Dummy fallback so "get directions" always has somewhere to route from — used on web,
+// Dummy fallback so "get directions" always has somewhere to route from - used on web,
 // simulators, or if location permission is denied. Central Accra, clearly not a real GPS fix.
 const DUMMY_LOCATION = { latitude: 5.5731, longitude: -0.2469 };
 
@@ -31,7 +31,7 @@ async function resolveUserLocation(): Promise<{ coords: LatLng; isDummy: boolean
   }
 }
 
-// Shared state/business-logic for the flood risk map — deliberately has zero map-library
+// Shared state/business-logic for the flood risk map - deliberately has zero map-library
 // dependency, so the native (react-native-maps) and web (react-leaflet) screens both drive
 // their own camera/marker rendering off this same hook instead of duplicating the logic.
 export function useFloodMap() {

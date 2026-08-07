@@ -25,4 +25,10 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     : context.resolveRequest(context, moduleName, platform);
 };
 
+config.resolver.blockList = [
+  /apps[\\\/]mobile[\\\/]src[\\\/]app[\\\/]\(tabs\)[\\\/]quiz[\\\/].*/,
+  /apps[\\\/]mobile[\\\/]src[\\\/]app[\\\/]\(tabs\)[\\\/]scan[\\\/].*/,
+  /apps[\\\/]mobile[\\\/]src[\\\/]app[\\\/]\(tabs\)[\\\/]marketplace[\\\/].*/,
+];
+
 module.exports = withNativeWind(config, { input: "./global.css" });

@@ -134,7 +134,7 @@ export default function VerifyScreen() {
             activeOpacity={0.85}
             onPress={() => {
               // No real OTP check against the backend (device-id auth has no email/phone
-              // concept, ORCHESTRATOR_CONTRACT.md §6) — this is the terminal step of the
+              // concept, ORCHESTRATOR_CONTRACT.md §6) - this is the terminal step of the
               // cosmetic sign-up flow. Real identity gets established silently on the home
               // screen via getOrCreateDeviceId()/bootstrapDevice(), same as every other path.
               completeOnboarding();

@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { lessons, type Lesson } from "../../../data/lessons";
 
-// Deterministic scatter so the background texture doesn't shuffle on every re-render —
+// Deterministic scatter so the background texture doesn't shuffle on every re-render -
 // a soft, low-opacity pattern behind the path (not random noise, same seed every time).
 function scatterDots(width: number, height: number, count: number) {
   return Array.from({ length: count }, (_, i) => {
@@ -37,7 +37,7 @@ const NEXT_ID = lessons[DONE_COUNT]?.id; // the single "up next" node
 
 const NODE_SIZE = 64;
 const ROW_HEIGHT = 130;
-const X_PATTERN = [0.5, 0.78, 0.5, 0.22]; // fraction across the track width — the zigzag
+const X_PATTERN = [0.5, 0.78, 0.5, 0.22]; // fraction across the track width - the zigzag
 
 function angleDeg(dx: number, dy: number) {
   return (Math.atan2(dy, dx) * 180) / Math.PI;
@@ -93,7 +93,7 @@ export default function LearnScreen() {
         contentContainerStyle={{ paddingVertical: 24 }}
       >
         <View style={{ height: pathHeight, width: "100%" }}>
-          {/* Soft background texture — decorative, sits behind everything else on the path */}
+          {/* Soft background texture - decorative, sits behind everything else on the path */}
           {dots.map((d) => (
             <View
               key={d.key}
@@ -111,7 +111,7 @@ export default function LearnScreen() {
             />
           ))}
 
-          {/* "You are here" marker — floats above the up-next node */}
+          {/* "You are here" marker - floats above the up-next node */}
           {nextDisplayIndex >= 0 && (
             <MotiView
               from={{ translateY: 0 }}
@@ -132,7 +132,7 @@ export default function LearnScreen() {
             </MotiView>
           )}
 
-          {/* Connectors — drawn first so nodes render on top */}
+          {/* Connectors - drawn first so nodes render on top */}
           {displayOrder.map((_, i) => {
             if (i === displayOrder.length - 1) return null;
             const x1 = xFor(i);
@@ -144,7 +144,7 @@ export default function LearnScreen() {
             const length = Math.hypot(dx, dy);
             const midX = (x1 + x2) / 2;
             const midY = (y1 + y2) / 2;
-            // Segment leads toward a later (more locked) lesson than the one below it —
+            // Segment leads toward a later (more locked) lesson than the one below it -
             // color it by whether the node it's climbing FROM is already unlocked.
             const fromLesson = displayOrder[i + 1]; // lower node = earlier in the real path
             if (!fromLesson) return null;
@@ -220,7 +220,7 @@ export default function LearnScreen() {
         </View>
       </ScrollView>
 
-      {/* Lesson preview — quick brief before committing to the full lesson screen */}
+      {/* Lesson preview - quick brief before committing to the full lesson screen */}
       <Modal
         visible={!!selected}
         transparent

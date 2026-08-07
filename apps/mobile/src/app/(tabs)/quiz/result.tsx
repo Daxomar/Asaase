@@ -21,7 +21,7 @@ export default function QuizResultScreen() {
         {score} / {total} correct
       </Text>
       <Text className="mt-2 text-center text-base text-text-on-dark-muted">
-        Nice work — points have been added to your balance.
+        Nice work - points have been added to your balance.
       </Text>
 
       <TouchableOpacity

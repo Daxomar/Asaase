@@ -94,7 +94,7 @@ export default function SignInScreen() {
             activeOpacity={0.85}
             onPress={() => {
               // No real credential check (device-id auth has no email/password concept,
-              // ORCHESTRATOR_CONTRACT.md §6) — returning users skip straight home, same
+              // ORCHESTRATOR_CONTRACT.md §6) - returning users skip straight home, same
               // terminal step as verify.tsx's sign-up path.
               completeOnboarding();
               router.replace("/");

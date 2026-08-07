@@ -28,7 +28,7 @@ export default function ReportDetailScreen() {
         </Text>
         <Text className="mt-1 text-2xl font-bold text-black">Location name goes here</Text>
         <Text className="mt-3 text-base leading-6 text-gray-700">
-          Report details go here — replace with real content fetched by reportId
+          Report details go here - replace with real content fetched by reportId
           (submitted photo, note, risk level, timestamp, reporter).
         </Text>
       </ScrollView>

@@ -2,7 +2,7 @@ import type { Severity } from "@asaase/shared";
 
 export type ThreatBand = "green" | "amber" | "red";
 
-// Mirrors apps/dashboard/data/threat.ts — same PRD bands (green 1-2, amber 3, red 4-5),
+// Mirrors apps/dashboard/data/threat.ts - same PRD bands (green 1-2, amber 3, red 4-5),
 // same product family across mobile + dashboard, not a from-scratch mobile scale.
 export const THREAT: Record<ThreatBand, { label: string; color: string; bg: string }> = {
   green: { label: "Low", color: "#1e8a46", bg: "#E3F1E7" },
