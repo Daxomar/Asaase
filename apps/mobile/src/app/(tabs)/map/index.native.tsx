@@ -121,10 +121,7 @@ export default function MapScreen() {
       </MapView>
 
       <SafeAreaView edges={["top"]} style={{ position: "absolute", top: 0, left: 0, right: 0 }}>
-        <View className="flex-row items-center justify-between px-6 pt-2">
-          <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-black/30">
-            <Ionicons name="chevron-back" size={22} color="#fff" />
-          </TouchableOpacity>
+        <View className="flex-row items-center justify-end px-6 pt-2">
           {m.selectedClusterId && (
             <TouchableOpacity onPress={m.exitIsolation} className="flex-row items-center gap-1.5 rounded-full bg-black/30 px-3 py-2">
               <Ionicons name="close" size={14} color="#fff" />
@@ -136,7 +133,7 @@ export default function MapScreen() {
 
       <View className="absolute bottom-0 left-0 right-0">
         <View
-          className="rounded-t-[28px] bg-white px-6 pb-8 pt-5"
+          className="rounded-t-[28px] bg-white px-6 pb-32 pt-5"
           style={{ shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } }}
         >
           <View className="mb-4 h-1 w-10 self-center rounded-full bg-gray-200" />

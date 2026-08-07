@@ -5,7 +5,7 @@ import { BLOCKAGE_LABEL, mapClusters, type SubPoint } from "../data/mapClusters"
 import { THREAT, bandFromSeverity } from "../data/threat";
 
 // Pure presentational panels shared by the native (react-native-maps) and web (react-leaflet)
-// map screens — no map-library dependency here, so this half of the feature isn't duplicated
+// map screens - no map-library dependency here, so this half of the feature isn't duplicated
 // per platform.
 
 export function DefaultPanel() {
@@ -57,7 +57,7 @@ export function ClusterPanel({
         </View>
       </View>
       <Text className="mt-3 text-sm text-gray-500">
-        {subPointCount} sub-reports shown below — tap one to help clear it.
+        {subPointCount} sub-reports shown below - tap one to help clear it.
       </Text>
     </View>
   );
@@ -112,7 +112,7 @@ export function SubPointPanel({
         ) : (
           <>
             <Ionicons name="navigate" size={18} color="#fff" style={{ marginRight: 8 }} />
-            <Text className="text-base font-bold text-white">Help clean this — get directions</Text>
+            <Text className="text-base font-bold text-white">Help clean this - get directions</Text>
           </>
         )}
       </TouchableOpacity>
@@ -141,13 +141,13 @@ export function RoutePanel({
         <View className="mt-3 flex-row items-start gap-2 rounded-2xl bg-gray-100 px-3 py-2.5">
           <Ionicons name="information-circle" size={16} color="#9CA3AF" style={{ marginTop: 1 }} />
           <Text className="flex-1 text-xs text-gray-500">
-            Using an approximate location — enable location services for a precise route.
+            Using an approximate location - enable location services for a precise route.
           </Text>
         </View>
       )}
 
       <Text className="mt-3 text-xs text-gray-400">
-        Straight-line distance shown — turn-by-turn road directions aren't wired up yet.
+        Straight-line distance shown - turn-by-turn road directions aren't wired up yet.
       </Text>
 
       <TouchableOpacity

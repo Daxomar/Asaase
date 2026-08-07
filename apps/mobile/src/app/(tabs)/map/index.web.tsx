@@ -156,7 +156,7 @@ function MapCanvas({
         </View>
       </SafeAreaView>
 
-      <View className="absolute bottom-0 left-0 right-0" style={{ zIndex: 1000 }}>
+      <View className="absolute bottom-0 left-0 right-0" style={{ zIndex: 1000, paddingBottom: 80 }}>
         <View
           className="rounded-t-[28px] bg-white px-6 pb-8 pt-5"
           style={{ shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } }}

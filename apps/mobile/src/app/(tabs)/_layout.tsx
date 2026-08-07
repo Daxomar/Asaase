@@ -26,8 +26,12 @@ export default function TabsLayout() {
         options={{ title: "Learn" }}
       />
       <Tabs.Screen
+        name="leaderboard"
+        options={{ title: "Ranks" }}
+      />
+      <Tabs.Screen
         name="marketplace"
-        options={{ title: "Store" }}
+        options={{ title: "Rewards", href: null }}
       />
 
       {/* Reachable via drill-down, not top-level tabs */}

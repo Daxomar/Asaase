@@ -50,6 +50,7 @@ export default function HomeScreen() {
   const { user, status, errorMessage, setUser, setStatus } = useUserStore();
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [streakModalVisible, setStreakModalVisible] = useState(false);
 
   const load = useCallback(async () => {
     setStatus("loading");
@@ -150,15 +151,37 @@ export default function HomeScreen() {
 
               {/* User Stats Dashboard */}
               <View className="mt-8 flex-row items-center justify-between gap-3">
-                <StatBadge icon="flame" value={user.streak} label="Streak" color="#ff9600" />
-                <StatBadge icon="star" value={levelOf(user.xp)} label="Level" color="#fbbf24" />
-                <StatBadge icon="leaf" value={user.tokens} label="Tokens" color="#86efac" />
+                <StatBadge icon="flame" value={user.streak} label="Streak" color="#fa5f05" />
+                <StatBadge icon="star" value={levelOf(user.xp)} label="Level" color="#fcc612" />
+                <StatBadge icon="leaf" value={user.tokens} label="Tokens" color="#10eb5f" />
               </View>
 
               </View>
             </View>
           </ImageBackground>
         </MotiView>
+
+        {/* STREAK CARD */}
+        <View className="mt-6 px-6">
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setStreakModalVisible(true);
+            }}
+            className="flex-row items-center rounded-3xl bg-white p-5"
+            style={{ shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 4 }}
+          >
+            <View className="h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
+              <Ionicons name="flame" size={28} color="#fa5f05" />
+            </View>
+            <View className="ml-4 flex-1">
+              <Text className="text-2xl font-bold text-gray-900">{user.streak} Day Streak</Text>
+              <Text className="text-xs text-gray-500 mt-1">Tap to see your weekly progress</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
+          </TouchableOpacity>
+        </View>
 
         {/* ACTIVE CLIMATE ALERTS (MAP FEATURE) */}
         <View className="mt-8 px-6">
@@ -330,6 +353,148 @@ export default function HomeScreen() {
             >
               <Ionicons name="share-social-outline" size={20} color="#fff" className="mr-2" />
               <Text className="ml-2 text-base font-bold text-white">Share Link</Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </Modal>
+
+      {/* STREAK CALENDAR MODAL */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={streakModalVisible}
+        onRequestClose={() => setStreakModalVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black/40">
+          <Pressable className="flex-1" onPress={() => setStreakModalVisible(false)} />
+          <View className="rounded-t-[32px] bg-white px-6 pb-10 pt-6" style={{ shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 20, shadowOffset: { width: 0, height: -10 }, elevation: 10 }}>
+            
+            <View className="mb-6 h-1 w-10 self-center rounded-full bg-gray-200" />
+
+            {/* Header */}
+            <View className="flex-row items-center justify-between mb-6">
+              <View>
+                <Text className="text-2xl font-bold text-gray-900">Daily Goal</Text>
+                <Text className="text-sm text-gray-500 mt-1">Keep your streak alive!</Text>
+              </View>
+              <View className="flex-row items-center gap-4">
+                <View className="flex-row items-center gap-1.5">
+                  <Ionicons name="book" size={16} color="#d9ac39" />
+                  <Text className="text-sm font-bold text-gray-700">1/2</Text>
+                </View>
+                <View className="flex-row items-center gap-1.5">
+                  <Ionicons name="camera" size={16} color="#3F7B1E" />
+                  <Text className="text-sm font-bold text-gray-700">2/3</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Week Calendar */}
+            <View className="flex-row items-center justify-between mb-8">
+              {(() => {
+                const days = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thr", "Fri"];
+                const today = new Date();
+                const dayMap = [6, 0, 1, 2, 3, 4, 5]; // Map to our Sat-Fri layout
+                const todayIdx = dayMap[today.getDay()];
+                
+                const lastActivity = user.lastActivityAt ? new Date(user.lastActivityAt) : null;
+                const isCompletedToday = lastActivity ? 
+                  lastActivity.getDate() === today.getDate() && 
+                  lastActivity.getMonth() === today.getMonth() && 
+                  lastActivity.getFullYear() === today.getFullYear() 
+                  : false;
+                
+                return days.map((day, i) => {
+                  const isFuture = i > todayIdx;
+                  const isToday = i === todayIdx;
+                  
+                  let isDone = false;
+                  let isMissed = false;
+
+                  if (isToday) {
+                    isDone = isCompletedToday;
+                  } else if (!isFuture) {
+                    const daysAgo = todayIdx - i;
+                    // If they scanned today, the streak includes today, so we check > daysAgo
+                    // If they haven't scanned today, the streak only covers past days, so >= daysAgo
+                    const streakCovers = isCompletedToday ? user.streak > daysAgo : user.streak >= daysAgo;
+                    isDone = streakCovers;
+                    isMissed = !streakCovers;
+                  }
+
+                  return (
+                    <MotiView
+                      key={day}
+                      from={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ type: "timing", duration: 300, delay: i * 50 }}
+                      className="items-center"
+                    >
+                      <Text className="text-xs font-medium text-gray-400 mb-2">{day}</Text>
+                      <View
+                        className="h-12 w-12 items-center justify-center rounded-2xl"
+                        style={{
+                          backgroundColor: isToday
+                            ? "#d9ac39" // Brand Amber for today
+                            : isDone
+                              ? "#3F7B1E" // Brand Green for completed
+                              : isMissed
+                                ? "#DC2626"
+                                : "#F3F4F6", // Light gray for future
+                          borderWidth: isToday ? 3 : 0,
+                          borderColor: isToday ? "#FFECA1" : "transparent",
+                        }}
+                      >
+                        {isDone && <Ionicons name="checkmark" size={22} color="#fff" />}
+                        {isToday && <Ionicons name="radio-button-on" size={20} color="#fff" />}
+                        {isMissed && <Ionicons name="alert" size={18} color="#fff" />}
+                        {isFuture && <Ionicons name="ellipse-outline" size={18} color="#D1D5DB" />}
+                      </View>
+                    </MotiView>
+                  );
+                });
+              })()}
+            </View>
+
+            {/* Streak Stats */}
+            <View className="flex-row items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 p-4 mb-6">
+              <View className="items-center flex-1">
+                <View className="flex-row items-center gap-1">
+                  <Ionicons name="flame" size={20} color="#fa5f05" />
+                  <Text className="text-2xl font-bold text-gray-900">{user.streak}</Text>
+                </View>
+                <Text className="text-[10px] font-semibold uppercase text-gray-400 mt-1">Current</Text>
+              </View>
+              <View className="h-8 w-px bg-gray-200" />
+              <View className="items-center flex-1">
+                <View className="flex-row items-center gap-1">
+                  <Ionicons name="trophy" size={20} color="#D4AF37" />
+                  <Text className="text-2xl font-bold text-gray-900">{Math.max(user.streak, 7)}</Text>
+                </View>
+                <Text className="text-[10px] font-semibold uppercase text-gray-400 mt-1">Best</Text>
+              </View>
+              <View className="h-8 w-px bg-gray-200" />
+              <View className="items-center flex-1">
+                <View className="flex-row items-center gap-1">
+                  <Ionicons name="calendar" size={20} color="#3F7B1E" />
+                  <Text className="text-2xl font-bold text-gray-900">{user.streak * 3}</Text>
+                </View>
+                <Text className="text-[10px] font-semibold uppercase text-gray-400 mt-1">Total Scans</Text>
+              </View>
+            </View>
+
+            {/* CTA */}
+            <TouchableOpacity
+              className="flex-row items-center justify-center rounded-full bg-[#3F7B1E] py-4"
+              activeOpacity={0.85}
+              onPress={() => {
+                setStreakModalVisible(false);
+                router.push("/scan");
+              }}
+            >
+              <Ionicons name="camera" size={20} color="#fff" style={{ marginRight: 8 }} />
+              <Text className="text-base font-bold text-white">Scan to keep your streak</Text>
             </TouchableOpacity>
 
           </View>

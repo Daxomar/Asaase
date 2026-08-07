@@ -7,7 +7,7 @@ const config = getDefaultConfig(__dirname);
 // tslib's package.json "exports" map has separate "module"/"import" (real ESM,
 // no default export) vs "default" (CJS) entries. For the web SSR/route-validation
 // bundle (transform.environment=node), Metro's active condition set ends up
-// matching the ESM branch, which has no `default` export — crashing any
+// matching the ESM branch, which has no `default` export - crashing any
 // transitive dep compiled with esModuleInterop that expects `require("tslib")`
 // to hand back the CJS object. Force the bare `tslib` specifier to always
 // resolve to its real CJS entry (tslib.js), regardless of platform/environment

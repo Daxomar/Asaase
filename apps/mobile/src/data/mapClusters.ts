@@ -20,7 +20,7 @@ export type MapCluster = {
   dominantBlockage: BlockageType;
 };
 
-// TODO: replace with a live GET /api/v1/alerts/summary + per-cluster reports call — this mirrors
+// TODO: replace with a live GET /api/v1/alerts/summary + per-cluster reports call - this mirrors
 // the shape the dashboard used before it was wired to the backend, mocked for UI-first mobile work.
 export const mapClusters: MapCluster[] = [
   { id: "CL-402", name: "Circle Interchange", lat: 5.5717, lng: -0.2107, radius: 220, severity: 5, scanCount: 42, dominantBlockage: "pet_bottles" },
@@ -52,7 +52,7 @@ function mulberry32(seed: number) {
   };
 }
 
-// Deterministic scatter of individual raw reports inside a cluster's radius — same technique
+// Deterministic scatter of individual raw reports inside a cluster's radius - same technique
 // used for the dashboard's earlier isolate-cluster mock (uniform-in-disk via sqrt(rand)).
 function generateSubPoints(): SubPoint[] {
   return mapClusters.flatMap((cluster) => {

@@ -23,7 +23,7 @@ export default function OnboardingScreen() {
 
         </View>
         {/* Subtitle */}
-        <Text className="mt-4 text-center text-base text-text-on-dark-muted">
+        <Text className="mt-4 text-center text-base text-black">
           Your personal eco-tracker for flood watching and community action.
         </Text>
 
@@ -56,7 +56,7 @@ export default function OnboardingScreen() {
           className="mb-8 mt-4 flex-row items-center justify-center rounded-full bg-[#3F7B1E] py-4"
           activeOpacity={0.85}
           onPress={() => {
-            router.push("/(auth)/sign-up");
+            router.push("/(onboarding)/goal-select");
           }}
         >
           <Text className="text-base font-bold text-white">

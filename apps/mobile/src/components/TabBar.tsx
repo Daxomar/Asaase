@@ -31,7 +31,7 @@ const TABS: TabConfig[] = [
   { label: "Map", icon: "map-outline", activeIcon: "map", name: "map" },
   { label: "Scan", icon: "camera-outline", activeIcon: "camera", name: "scan" },
   { label: "Learn", icon: "book-outline", activeIcon: "book", name: "learn" },
-  { label: "Store", icon: "storefront-outline", activeIcon: "storefront", name: "marketplace" },
+  { label: "Ranks", icon: "trophy-outline", activeIcon: "trophy", name: "leaderboard" },
 ];
 
 export function TabBar({ state, navigation }: BottomTabBarProps) {

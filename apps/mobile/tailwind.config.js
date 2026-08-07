@@ -17,7 +17,7 @@ module.exports = {
         critical: "#b8382f",
         "text-on-dark": "#f3f1e6",
         "text-on-dark-muted": "#9fb0a2",
-        // Light surfaces — were missing despite the "mirrors dashboard tokens" intent above;
+        // Light surfaces - were missing despite the "mirrors dashboard tokens" intent above;
         // needed for any screen that isn't full-bleed dark (e.g. a light-canvas home screen).
         canvas: "#f4f5ee",
         surface: "#ffffff",
