@@ -18,7 +18,7 @@ export default function OnboardingScreen() {
           {/* Hero heading */}
           <Text className="mt-4 text-4xl font-bold text-black text-center ">
             {"Welcome to\n"}
-            <Text className="text-[#3F7B1E]">Asaase.</Text>
+            <Text className="text-[#3F7B1E]">Asaase</Text>
           </Text>
 
         </View>
