@@ -9,6 +9,9 @@ export default function OnboardingLayout() {
       }}
     >
       <Stack.Screen name="welcome" />
+      <Stack.Screen name="about" />
+      <Stack.Screen name="learn-more" />
+      <Stack.Screen name="civic-duty" />
     </Stack>
   );
 }

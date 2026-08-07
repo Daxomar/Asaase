@@ -11,11 +11,23 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { firstFieldErrors, signUpSchema, type SignUpFieldErrors } from "../../lib/authValidation";
 
 export default function SignUpScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<SignUpFieldErrors>({});
+
+  function handleContinue() {
+    const result = firstFieldErrors(signUpSchema, { name, email, password });
+    if (!result.success) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
+    router.push("/(auth)/verify");
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -57,11 +69,17 @@ export default function SignUpScreen() {
               </Text>
               <TextInput
                 value={name}
-                onChangeText={setName}
+                onChangeText={(t) => {
+                  setName(t);
+                  if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
+                }}
                 placeholder="e.g. Kwame Mensah"
                 placeholderTextColor="#9CA3AF"
-                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 text-base text-black"
+                className={`rounded-xl border bg-gray-50 px-4 py-4 text-base text-black ${
+                  errors.name ? "border-red-400" : "border-gray-200"
+                }`}
               />
+              {errors.name && <Text className="mt-1.5 text-xs text-red-500">{errors.name}</Text>}
             </View>
 
             <View>
@@ -70,13 +88,19 @@ export default function SignUpScreen() {
               </Text>
               <TextInput
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(t) => {
+                  setEmail(t);
+                  if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+                }}
                 placeholder="you@example.com"
                 placeholderTextColor="#9CA3AF"
                 keyboardType="email-address"
                 autoCapitalize="none"
-                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 text-base text-black"
+                className={`rounded-xl border bg-gray-50 px-4 py-4 text-base text-black ${
+                  errors.email ? "border-red-400" : "border-gray-200"
+                }`}
               />
+              {errors.email && <Text className="mt-1.5 text-xs text-red-500">{errors.email}</Text>}
             </View>
 
             <View>
@@ -85,12 +109,18 @@ export default function SignUpScreen() {
               </Text>
               <TextInput
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(t) => {
+                  setPassword(t);
+                  if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
+                }}
                 placeholder="At least 8 characters"
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry
-                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 text-base text-black"
+                className={`rounded-xl border bg-gray-50 px-4 py-4 text-base text-black ${
+                  errors.password ? "border-red-400" : "border-gray-200"
+                }`}
               />
+              {errors.password && <Text className="mt-1.5 text-xs text-red-500">{errors.password}</Text>}
             </View>
           </View>
 
@@ -98,9 +128,7 @@ export default function SignUpScreen() {
           <TouchableOpacity
             className="mb-4 mt-8 flex-row items-center justify-center rounded-full bg-[#3F7B1E] py-4"
             activeOpacity={0.85}
-            onPress={() => {
-              router.push("/(auth)/verify");
-            }}
+            onPress={handleContinue}
           >
             <Text className="text-base font-bold text-white">Continue</Text>
             <Ionicons

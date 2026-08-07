@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useUserStore } from "../../store/userStore";
+import { verifyCodeSchema } from "../../lib/authValidation";
 
 const CODE_LENGTH = 6;
 const RESEND_SECONDS = 30;
@@ -19,6 +20,7 @@ export default function VerifyScreen() {
   const { completeOnboarding } = useUserStore();
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
+  const [codeError, setCodeError] = useState<string | null>(null);
   const inputs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
@@ -58,6 +60,21 @@ export default function VerifyScreen() {
 
   const isComplete = code.every((d) => d !== "");
 
+  function handleVerify() {
+    const result = verifyCodeSchema.safeParse(code.join(""));
+    if (!result.success) {
+      setCodeError(result.error.issues[0]?.message ?? "Enter the 6-digit code");
+      return;
+    }
+    setCodeError(null);
+    // No real OTP check against the backend (device-id auth has no email/phone
+    // concept, ORCHESTRATOR_CONTRACT.md §6) — this is the terminal step of the
+    // cosmetic sign-up flow. Real identity gets established silently on the home
+    // screen via getOrCreateDeviceId()/bootstrapDevice(), same as every other path.
+    completeOnboarding();
+    router.replace("/");
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
@@ -96,7 +113,10 @@ export default function VerifyScreen() {
                   inputs.current[i] = ref;
                 }}
                 value={digit}
-                onChangeText={(t) => handleChange(t, i)}
+                onChangeText={(t) => {
+                  handleChange(t, i);
+                  if (codeError) setCodeError(null);
+                }}
                 onKeyPress={(e) => handleKeyPress(e, i)}
                 keyboardType="number-pad"
                 maxLength={CODE_LENGTH}
@@ -109,6 +129,7 @@ export default function VerifyScreen() {
               />
             ))}
           </View>
+          {codeError && <Text className="mt-2 text-center text-xs text-red-500">{codeError}</Text>}
 
           {/* Resend */}
           <View className="mt-6 flex-row justify-center">
@@ -132,14 +153,7 @@ export default function VerifyScreen() {
               isComplete ? "bg-[#3F7B1E]" : "bg-gray-200"
             }`}
             activeOpacity={0.85}
-            onPress={() => {
-              // No real OTP check against the backend (device-id auth has no email/phone
-              // concept, ORCHESTRATOR_CONTRACT.md §6) — this is the terminal step of the
-              // cosmetic sign-up flow. Real identity gets established silently on the home
-              // screen via getOrCreateDeviceId()/bootstrapDevice(), same as every other path.
-              completeOnboarding();
-              router.replace("/");
-            }}
+            onPress={handleVerify}
           >
             <Text
               className={`text-base font-bold ${

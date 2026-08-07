@@ -12,11 +12,27 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useUserStore } from "../../store/userStore";
+import { firstFieldErrors, signInSchema, type SignInFieldErrors } from "../../lib/authValidation";
 
 export default function SignInScreen() {
   const { completeOnboarding } = useUserStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<SignInFieldErrors>({});
+
+  function handleSignIn() {
+    const result = firstFieldErrors(signInSchema, { email, password });
+    if (!result.success) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
+    // No real credential check (device-id auth has no email/password concept,
+    // ORCHESTRATOR_CONTRACT.md §6) — returning users skip straight home, same
+    // terminal step as verify.tsx's sign-up path.
+    completeOnboarding();
+    router.replace("/");
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -58,13 +74,19 @@ export default function SignInScreen() {
               </Text>
               <TextInput
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(t) => {
+                  setEmail(t);
+                  if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+                }}
                 placeholder="you@example.com"
                 placeholderTextColor="#9CA3AF"
                 keyboardType="email-address"
                 autoCapitalize="none"
-                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 text-base text-black"
+                className={`rounded-xl border bg-gray-50 px-4 py-4 text-base text-black ${
+                  errors.email ? "border-red-400" : "border-gray-200"
+                }`}
               />
+              {errors.email && <Text className="mt-1.5 text-xs text-red-500">{errors.email}</Text>}
             </View>
 
             <View>
@@ -73,12 +95,18 @@ export default function SignInScreen() {
               </Text>
               <TextInput
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(t) => {
+                  setPassword(t);
+                  if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
+                }}
                 placeholder="Enter your password"
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry
-                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 text-base text-black"
+                className={`rounded-xl border bg-gray-50 px-4 py-4 text-base text-black ${
+                  errors.password ? "border-red-400" : "border-gray-200"
+                }`}
               />
+              {errors.password && <Text className="mt-1.5 text-xs text-red-500">{errors.password}</Text>}
             </View>
 
             <TouchableOpacity className="self-end">
@@ -92,13 +120,7 @@ export default function SignInScreen() {
           <TouchableOpacity
             className="mb-4 mt-8 flex-row items-center justify-center rounded-full bg-[#3F7B1E] py-4"
             activeOpacity={0.85}
-            onPress={() => {
-              // No real credential check (device-id auth has no email/password concept,
-              // ORCHESTRATOR_CONTRACT.md §6) — returning users skip straight home, same
-              // terminal step as verify.tsx's sign-up path.
-              completeOnboarding();
-              router.replace("/");
-            }}
+            onPress={handleSignIn}
           >
             <Text className="text-base font-bold text-white">Sign in</Text>
             <Ionicons
