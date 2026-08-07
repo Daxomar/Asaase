@@ -58,11 +58,7 @@
         {
           "locationWhenInUsePermission": "Asaase uses your location to pinpoint the drain you're reporting."
         }
-      ],
-      "expo-font",
-      "expo-image",
-      "expo-status-bar",
-      "expo-web-browser"
+      ]
     ],
     "experiments": {
       "typedRoutes": true

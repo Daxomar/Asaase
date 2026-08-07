@@ -8,7 +8,7 @@ import { useUserStore } from "../../store/userStore";
 
 const GOALS = [
   { id: "1", title: "Track Floods", subtitle: "Monitor local risk levels", icon: "water" },
-  { id: "2", title: "Scan Drains", subtitle: "Report blockages in your area", icon: "camera" },
+  { id: "2", title: "Scan", subtitle: "Report blockages in your area", icon: "camera" },
   { id: "3", title: "Learn & Earn", subtitle: "Complete quizzes for rewards", icon: "school" },
   { id: "4", title: "Community Action", subtitle: "Connect and coordinate", icon: "people" },
 ];
