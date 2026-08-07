@@ -10,7 +10,7 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001
 export class ApiError extends Error {}
 
 async function parseError(res: Response): Promise<never> {
-  const body = await res.json().catch(() => null);
+  const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
   throw new ApiError(body?.error?.message ?? `Request failed (${res.status})`);
 }
 
@@ -36,7 +36,7 @@ export async function pingStreak(deviceId: string): Promise<{ streak: number; la
     headers: { "X-Device-Id": deviceId },
   });
   if (!res.ok) return parseError(res);
-  return res.json();
+  return (await res.json()) as { streak: number; lastActivityAt: string };
 }
 
 // POST /api/scans/analyze — ORCHESTRATOR_CONTRACT.md §3/§9: multipart/form-data (real file, not
@@ -58,10 +58,11 @@ export async function analyzeScan(
   const res = await fetch(`${API_URL}/api/scans/analyze`, {
     method: "POST",
     headers: { "X-Device-Id": deviceId },
-    body: form,
+    // ponytail: RN fetch accepts FormData at runtime; SDK54 BodyInit_ typing is narrower
+    body: form as unknown as RequestInit["body"],
   });
   if (!res.ok) return parseError(res);
-  return res.json();
+  return (await res.json()) as { scan: Scan; cluster: { id: string; severity: Severity; created: boolean } };
 }
 
 export async function submitQuiz(
@@ -75,7 +76,7 @@ export async function submitQuiz(
     body: JSON.stringify({ quizId, correct }),
   });
   if (!res.ok) return parseError(res);
-  return res.json();
+  return (await res.json()) as { xp: number; tokens: number; awarded: boolean };
 }
 
 // POST /api/marketplace/redeem — gamification.ts (T10) is authoritative on price + balance (one
@@ -93,5 +94,5 @@ export async function redeemReward(
     body: JSON.stringify({ rewardId, cost }),
   });
   if (!res.ok) return parseError(res);
-  return res.json();
+  return (await res.json()) as { tokens: number; redeemed: true };
 }
