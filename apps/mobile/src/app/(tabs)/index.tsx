@@ -83,14 +83,6 @@ export default function HomeScreen() {
     }, [status, setUser]),
   );
 
-  if (status === "loading" || !user) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-[#F5F7FA]">
-        <ActivityIndicator color="#3F7B1E" />
-      </SafeAreaView>
-    );
-  }
-
   if (status === "error") {
     return (
       <SafeAreaView className="flex-1 items-center justify-center gap-4 bg-[#F5F7FA] px-8">
@@ -99,6 +91,14 @@ export default function HomeScreen() {
         <TouchableOpacity onPress={load} className="rounded-full bg-[#3F7B1E] px-6 py-3 active:scale-95">
           <Text className="font-semibold text-white">Try again</Text>
         </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  if (status === "loading" || !user) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-[#F5F7FA]">
+        <ActivityIndicator color="#3F7B1E" />
       </SafeAreaView>
     );
   }

@@ -69,13 +69,9 @@ export default function ScanScreen() {
   return (
     <View className="flex-1 bg-black">
       {isFocused ? (
-        <CameraView
-          ref={cameraRef}
-          style={{ flex: 1 }}
-          facing={facing}
-        >
-          <SafeAreaView className="flex-1 justify-between">
-            {/* Top Bar */}
+        <>
+          <CameraView ref={cameraRef} style={{ flex: 1 }} facing={facing} />
+          <SafeAreaView className="absolute inset-0 justify-between" pointerEvents="box-none">
             <View className="flex-row items-center justify-between px-6 pt-4">
               <TouchableOpacity
                 onPress={() => router.push("/")}
@@ -83,7 +79,7 @@ export default function ScanScreen() {
               >
                 <Ionicons name="close" size={24} color="#fff" />
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 onPress={() => setFacing((f) => (f === "back" ? "front" : "back"))}
                 className="h-10 w-10 items-center justify-center rounded-full bg-black/40"
@@ -92,13 +88,12 @@ export default function ScanScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Bottom Controls */}
             <View className="items-center pb-20">
               <View className="mb-6 rounded-full bg-black/40 px-4 py-2">
                 <Text className="text-sm font-semibold text-white">Align the blocked drain in frame</Text>
               </View>
 
-              <View className="flex-row items-center gap-12">
+              <View className="flex-row items-center" style={{ gap: 48 }}>
                 <TouchableOpacity className="h-12 w-12 items-center justify-center rounded-full bg-black/40">
                   <Ionicons name="images" size={22} color="#fff" />
                 </TouchableOpacity>
@@ -111,11 +106,11 @@ export default function ScanScreen() {
                   <View className="h-16 w-16 rounded-full bg-white opacity-90" />
                 </TouchableOpacity>
 
-                <View className="h-12 w-12" /> {/* Spacer to balance flex-row */}
+                <View className="h-12 w-12" />
               </View>
             </View>
           </SafeAreaView>
-        </CameraView>
+        </>
       ) : (
         <View className="flex-1 bg-black" />
       )}
