@@ -9,13 +9,30 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001
 
 export class ApiError extends Error {}
 
+const FETCH_TIMEOUT_MS = 10_000;
+
+async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new ApiError("Could not reach Asaase.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function parseError(res: Response): Promise<never> {
-  const body = await res.json().catch(() => null);
+  const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
   throw new ApiError(body?.error?.message ?? `Request failed (${res.status})`);
 }
 
 export async function bootstrapDevice(deviceId: string): Promise<User> {
-  const res = await fetch(`${API_URL}/api/auth/device`, {
+  const res = await apiFetch(`${API_URL}/api/auth/device`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ deviceId }),
@@ -25,18 +42,18 @@ export async function bootstrapDevice(deviceId: string): Promise<User> {
 }
 
 export async function fetchMe(deviceId: string): Promise<User> {
-  const res = await fetch(`${API_URL}/api/users/me`, { headers: { "X-Device-Id": deviceId } });
+  const res = await apiFetch(`${API_URL}/api/users/me`, { headers: { "X-Device-Id": deviceId } });
   if (!res.ok) return parseError(res);
   return ((await res.json()) as { user: User }).user;
 }
 
 export async function pingStreak(deviceId: string): Promise<{ streak: number; lastActivityAt: string }> {
-  const res = await fetch(`${API_URL}/api/streak/ping`, {
+  const res = await apiFetch(`${API_URL}/api/streak/ping`, {
     method: "POST",
     headers: { "X-Device-Id": deviceId },
   });
   if (!res.ok) return parseError(res);
-  return res.json();
+  return (await res.json()) as { streak: number; lastActivityAt: string };
 }
 
 // POST /api/scans/analyze — ORCHESTRATOR_CONTRACT.md §3/§9: multipart/form-data (real file, not
@@ -55,13 +72,14 @@ export async function analyzeScan(
 
   // No Content-Type header — fetch sets the multipart boundary itself; overriding it manually
   // breaks the boundary on RN's fetch implementation.
-  const res = await fetch(`${API_URL}/api/scans/analyze`, {
+  const res = await apiFetch(`${API_URL}/api/scans/analyze`, {
     method: "POST",
     headers: { "X-Device-Id": deviceId },
-    body: form,
+    // ponytail: RN fetch accepts FormData at runtime; SDK54 BodyInit_ typing is narrower
+    body: form as unknown as RequestInit["body"],
   });
   if (!res.ok) return parseError(res);
-  return res.json();
+  return (await res.json()) as { scan: Scan; cluster: { id: string; severity: Severity; created: boolean } };
 }
 
 export async function submitQuiz(
@@ -69,13 +87,13 @@ export async function submitQuiz(
   quizId: string,
   correct: boolean,
 ): Promise<{ xp: number; tokens: number; awarded: boolean }> {
-  const res = await fetch(`${API_URL}/api/quiz/submit`, {
+  const res = await apiFetch(`${API_URL}/api/quiz/submit`, {
     method: "POST",
     headers: { "X-Device-Id": deviceId, "Content-Type": "application/json" },
     body: JSON.stringify({ quizId, correct }),
   });
   if (!res.ok) return parseError(res);
-  return res.json();
+  return (await res.json()) as { xp: number; tokens: number; awarded: boolean };
 }
 
 // POST /api/marketplace/redeem — gamification.ts (T10) is authoritative on price + balance (one
@@ -87,11 +105,11 @@ export async function redeemReward(
   rewardId: string,
   cost: number,
 ): Promise<{ tokens: number; redeemed: true }> {
-  const res = await fetch(`${API_URL}/api/marketplace/redeem`, {
+  const res = await apiFetch(`${API_URL}/api/marketplace/redeem`, {
     method: "POST",
     headers: { "X-Device-Id": deviceId, "Content-Type": "application/json" },
     body: JSON.stringify({ rewardId, cost }),
   });
   if (!res.ok) return parseError(res);
-  return res.json();
+  return (await res.json()) as { tokens: number; redeemed: true };
 }
